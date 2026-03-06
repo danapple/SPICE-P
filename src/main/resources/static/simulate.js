@@ -215,7 +215,7 @@ function displaySimulationResults(results) {
             renderPercentage(results.worst_performance) + "</span>";
     }
 
-    displayMessage("Simulation complete!");
+    displayMessage("Simulation complete");
 }
 
 document.getElementById('add_asset_button').addEventListener('click', addAsset);
