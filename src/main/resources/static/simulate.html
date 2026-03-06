@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>SPICE-P Portfolio Simulation</title>
+    <link rel="stylesheet" href="spicep.css">
+
+    <script src="https://code.jquery.com/jquery-3.1.1.min.js"></script>
+    <script src="https://code.jquery.com/ui/1.14.1/jquery-ui.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jqueryui-touch-punch/0.2.3/jquery.ui.touch-punch.min.js"></script>
+    <link rel="stylesheet" href="https://code.jquery.com/ui/1.14.1/themes/base/jquery-ui.css">
+
+    <link href="https://cdn.datatables.net/2.3.4/css/dataTables.dataTables.css" rel="stylesheet">
+    <link href="datatables.min.css" rel="stylesheet">
+    <script src="datatables.min.js"></script>
+    <script type="text/javascript" language="javascript" src="dataTables.scrollResize.js"></script>
+
+    <script src="https://code.jquery.com/jquery-3.1.1.min.js"></script>
+
+</head>
+<body>
+<div class="app-container">
+
+<div id="update_message"><br></div>
+
+<div>
+    <label for="symbol_input">Symbol</label>
+    <input placeholder="symbol" name="symbol_input" id="symbol_input">
+
+    <label for="value_input">Original Value ($)</label>
+    <input placeholder="0.0" type=number name="value_input" id="value_input">
+
+    <label for="quantity_input">Quantity</label>
+    <input placeholder="0" type=number name="quantity_input" id="quantity_input">
+
+    <button id="add_asset_button" type="button">Add Asset</button>
+</div>
+
+<div>
+<table id="assets_table">
+    <thead></thead>
+    <tbody></tbody>
+</table>
+</div>
+
+<div>
+    <button id="simulate_button" type="button">Run Simulation</button>
+    <button id="clear_button" type="button">Clear All</button>
+</div>
+
+<div class="wallet-header">
+    <div class="wallet-title-container">
+        <label for="simulation_total">Simulated Total Value</label>
+        <div id="simulation_total"></div>
+    </div>
+    <div class="wallet-total-container">
+        <label for="best_asset">Best Performer</label>
+        <div id="best_asset"></div>
+    </div>
+    <div class="wallet-total-container">
+        <label for="worst_asset">Worst Performer</label>
+        <div id="worst_asset"></div>
+    </div>
+</div>
+
+<div style="text-align: center;">
+    <button onclick="window.location.href='index.html'" type="button">Go to Wallet Management</button>
+</div>
+
+</div>
+</body>
+
+<script src="simulate.js"></script>

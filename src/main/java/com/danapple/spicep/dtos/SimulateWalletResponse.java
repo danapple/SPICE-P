@@ -1,0 +1,10 @@
+package com.danapple.spicep.dtos;
+
+import java.math.BigDecimal;
+
+public record SimulateWalletResponse(BigDecimal total,
+                                     String best_asset,
+                                     BigDecimal best_performance,
+                                     String worst_asset,
+                                     BigDecimal worst_performance) {
+}

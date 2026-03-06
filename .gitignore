@@ -1,6 +1,11 @@
 # Compiled class file
 *.class
 
+target/
+.idea
+.env
+dependency-reduced-pom.xml
+
 # Log file
 *.log
 

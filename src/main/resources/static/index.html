@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>SPICE-P Crypto wallet management</title>
+    <link rel="stylesheet" href="spicep.css">
+
+    <script src="https://code.jquery.com/jquery-3.1.1.min.js"></script>
+    <script src="https://code.jquery.com/ui/1.14.1/jquery-ui.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jqueryui-touch-punch/0.2.3/jquery.ui.touch-punch.min.js"></script>
+    <link rel="stylesheet" href="https://code.jquery.com/ui/1.14.1/themes/base/jquery-ui.css">
+
+    <link href="https://cdn.datatables.net/2.3.4/css/dataTables.dataTables.css" rel="stylesheet">
+    <link href="datatables.min.css" rel="stylesheet">
+    <script src="datatables.min.js"></script>
+    <script type="text/javascript" language="javascript" src="dataTables.scrollResize.js"></script>
+
+    <script src="https://code.jquery.com/jquery-3.1.1.min.js"></script>
+
+</head>
+<body>
+<div class="app-container">
+
+<div id="update_message"><br></div>
+
+<div>
+
+    <label for="wallet_email_address" >Wallet email address</label>
+    <input type="email"
+        placeholder="you@example.com"
+        name="wallet_email_address" id="wallet_email_address">
+    <button id="load_wallet_button" type="button">Load wallet</button>
+</div>
+
+<div class="wallet-header">
+    <div class="wallet-title-container">
+        <label for="wallet_title">Wallet</label>
+        <div id="wallet_title"></div>
+    </div>
+    <div class="wallet-total-container">
+        <label for="wallet_total">Total</label>
+        <div id="wallet_total"></div>
+    </div>
+</div>
+
+<div>
+    <label for="symbol_input" >Symbol</label>
+    <input placeholder="symbol" name="symbol_input" id="symbol_input">
+
+    <label for="price_input" >Price</label>
+    <input placeholder="0.0" type=number name="price_input" id="price_input">
+
+    <label for="quantity_input">Quantity</label>
+    <input placeholder="0" type=number name="quantity_input" id="quantity_input">
+
+
+    <button id="add_asset_button" type="button">Adjust position</button>
+</div>
+
+<div>
+<table id="positions_table" >
+    <thead></thead>
+    <tbody></tbody>
+</table>
+</div>
+
+<div style="text-align: center;">
+    <button onclick="window.location.href='simulate.html'" type="button">Go to Portfolio Simulation</button>
+</div>
+
+</div>
+</body>
+
+<script src="spicep.js"></script>

@@ -1,0 +1,34 @@
+logging:
+  level:
+    ROOT: INFO
+    org:
+      springframework:
+        web: INFO
+
+spring:
+  mvc:
+    log-request-details: true
+
+  flyway:
+    enabled: true
+
+  datasource:
+    spicep:
+      jdbcUrl: jdbc:h2:mem:spicep
+      username: spicep
+      password: spiceppassword
+      driverClassname: org.h2.Driver
+      maximumPoolSize: 2
+    url: jdbc:h2:mem:testdb
+
+spicep:
+  database:
+    spicep:
+      repair: false
+      migrationsLocation: filesystem:src/main/resources/migrations
+  coinCapPriceService:
+    apiKey: ${COINCAP_API_KEY}
+    url: https://rest.coincap.io/v3
+    threadCount: 3
+  refreshService:
+    refreshPeriod: 10

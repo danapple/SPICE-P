@@ -1,0 +1,40 @@
+server:
+    port: 5233
+
+logging:
+  level:
+    ROOT: ${ROOT_LOGGING_LEVEL:INFO}
+    org:
+      springframework:
+        web: INFO
+
+      springboot:
+        web: INFO
+
+spring:
+  mvc:
+    log-request-details: true
+
+  flyway:
+    enabled: true
+
+  datasource:
+    spicep:
+      jdbcUrl: ${SPICE_DB_LOCATION:jdbc:h2:file:/tmp/spicep-db}
+      username: spicep
+      password: spiceppassword
+      driverClassname: org.h2.Driver
+      maximumPoolSize: 2
+    url: jdbc:h2:mem:testdb
+
+spicep:
+  database:
+    spicep:
+      repair: false
+      migrationsLocation: filesystem:src/main/resources/migrations
+  coinCapPriceService:
+    apiKey: ${COINCAP_API_KEY}
+    url: ${COINCAP_URL}
+    threadCount: ${COINCAP_THREAD_COUNT:3}
+  refreshService:
+    refreshPeriod: ${COINCAP_REFRESH_PERIOD:10}

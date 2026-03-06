@@ -1,0 +1,323 @@
+:root {
+    /* Color Palette */
+    --bg-app: #0f1419;
+    --bg-card: #1a1f29;
+    --bg-card-hover: #242936;
+    --bg-input: #141821;
+
+    --border-color: #2d3342;
+    --border-focus: #4c7cf6;
+
+    --text-primary: #e6e8eb;
+    --text-secondary: #9ca3af;
+    --text-muted: #6b7280;
+
+    --accent-primary: #4c7cf6;
+    --accent-hover: #3b66db;
+    --accent-active: #2d52c2;
+
+    --color-success: #10b981;
+    --color-danger: #ef4444;
+    --color-warning: #f59e0b;
+
+    --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.3);
+    --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.4);
+    --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.5);
+
+    --radius-sm: 6px;
+    --radius-md: 8px;
+    --radius-lg: 12px;
+}
+
+* {
+    box-sizing: border-box;
+}
+
+body {
+    background: linear-gradient(135deg, var(--bg-app) 0%, #1a1f2e 100%);
+    color: var(--text-primary);
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', sans-serif;
+    font-size: 14px;
+    line-height: 1.6;
+    margin: 0;
+    padding: 0;
+    min-height: 100vh;
+}
+
+.app-container {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 32px 24px;
+}
+
+/* Header/Title Section */
+#update_message {
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    padding: 12px 20px;
+    margin-bottom: 24px;
+    font-size: 14px;
+    color: var(--text-secondary);
+    box-shadow: var(--shadow-sm);
+    min-height: 42px;
+    display: flex;
+    align-items: center;
+}
+
+#update_message b {
+    color: var(--text-primary);
+    font-weight: 600;
+}
+
+/* Form Controls */
+label {
+    display: inline-block;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text-secondary);
+    margin-bottom: 6px;
+    margin-right: 12px;
+    letter-spacing: 0.01em;
+}
+
+input[type="email"],
+input[type="number"],
+input[type="text"],
+input {
+    background: var(--bg-input);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-sm);
+    color: var(--text-primary);
+    padding: 10px 14px;
+    font-size: 14px;
+    font-family: inherit;
+    transition: all 0.2s ease;
+    margin-right: 12px;
+    min-width: 200px;
+}
+
+input:focus {
+    outline: none;
+    border-color: var(--accent-primary);
+    box-shadow: 0 0 0 3px rgba(76, 124, 246, 0.1);
+}
+
+input::placeholder {
+    color: var(--text-muted);
+}
+
+button {
+    background: var(--accent-primary);
+    color: white;
+    border: none;
+    border-radius: var(--radius-sm);
+    padding: 10px 20px;
+    font-size: 14px;
+    font-weight: 600;
+    font-family: inherit;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    box-shadow: var(--shadow-sm);
+}
+
+button:hover {
+    background: var(--accent-hover);
+    box-shadow: var(--shadow-md);
+    transform: translateY(-1px);
+}
+
+button:active {
+    background: var(--accent-active);
+    transform: translateY(0);
+}
+
+/* Form Sections */
+.app-container > div {
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-lg);
+    padding: 24px;
+    margin-bottom: 24px;
+    box-shadow: var(--shadow-md);
+}
+
+.wallet-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-lg);
+    padding: 24px;
+    margin-bottom: 24px;
+    box-shadow: var(--shadow-md);
+}
+
+.wallet-title-container {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+}
+
+.wallet-title-container label {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 4px;
+    margin-right: 0;
+}
+
+#wallet_title {
+    font-size: 24px;
+    font-weight: 700;
+    color: var(--text-primary);
+    letter-spacing: -0.02em;
+    padding: 0;
+    margin: 0;
+}
+
+.wallet-total-container {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+}
+
+.wallet-total-container label {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 4px;
+    margin-right: 0;
+}
+
+#wallet_total {
+    font-size: 32px;
+    font-weight: 700;
+    color: var(--color-success);
+    margin: 0;
+}
+
+/* DataTables Styling */
+#positions_table {
+    width: 100% !important;
+    border-collapse: separate;
+    border-spacing: 0;
+}
+
+#positions_table thead th {
+    background: var(--bg-input);
+    color: var(--text-secondary);
+    font-weight: 600;
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    padding: 14px 16px;
+    border-bottom: 2px solid var(--border-color);
+    text-align: right;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+}
+
+#positions_table tbody tr {
+    background: var(--bg-card);
+    transition: background 0.15s ease;
+}
+
+#positions_table tbody tr:hover {
+    background: var(--bg-card-hover);
+}
+
+#positions_table tbody tr:last-child {
+    background: var(--bg-input);
+    font-weight: 600;
+    border-top: 2px solid var(--border-color);
+}
+
+#positions_table tbody tr:last-child:hover {
+    background: var(--bg-input);
+}
+
+#positions_table tbody td {
+    padding: 14px 16px;
+    color: var(--text-primary);
+    border-bottom: 1px solid var(--border-color);
+    font-size: 14px;
+}
+
+#positions_table tbody tr:last-child td {
+    border-bottom: none;
+}
+
+.dt-right {
+    text-align: right !important;
+}
+
+/* DataTables Wrapper */
+.dataTables_wrapper {
+    color: var(--text-primary);
+}
+
+.dataTables_scrollHead {
+    background: var(--bg-card);
+}
+
+.dataTables_scrollBody {
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    max-height: 500px;
+}
+
+.dataTables_scrollBody::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+.dataTables_scrollBody::-webkit-scrollbar-track {
+    background: var(--bg-input);
+    border-radius: 4px;
+}
+
+.dataTables_scrollBody::-webkit-scrollbar-thumb {
+    background: var(--border-color);
+    border-radius: 4px;
+}
+
+.dataTables_scrollBody::-webkit-scrollbar-thumb:hover {
+    background: var(--border-focus);
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .app-container {
+        padding: 16px;
+    }
+
+    input[type="email"],
+    input[type="number"],
+    input[type="text"],
+    input {
+        min-width: 150px;
+        margin-bottom: 8px;
+    }
+
+    label {
+        display: block;
+        margin-bottom: 4px;
+    }
+
+    button {
+        width: 100%;
+        margin-top: 8px;
+    }
+
+    #wallet_title {
+        font-size: 20px;
+    }
+
+    #wallet_total {
+        font-size: 24px;
+    }
+}
