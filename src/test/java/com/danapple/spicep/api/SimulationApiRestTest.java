@@ -21,7 +21,6 @@ public class SimulationApiRestTest extends AbstractRestTest {
 
     private final static LocalDate DATE_2025_03_03 = LocalDate.of(2025, 3, 3);
 
-
     @Test
     void simulateWithOneAssetReturnsSameBestAndWorst() {
         List<TestSimulateAssetRequest> assets = new ArrayList<>();

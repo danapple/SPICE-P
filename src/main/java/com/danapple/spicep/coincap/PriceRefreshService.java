@@ -2,12 +2,11 @@ package com.danapple.spicep.coincap;
 
 import com.danapple.spicep.dao.TokenDao;
 import com.danapple.spicep.entities.Token;
+import jakarta.annotation.PostConstruct;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.boot.context.event.ApplicationReadyEvent;
-import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
@@ -36,7 +35,7 @@ public class PriceRefreshService {
         this.coinCapPriceService = coinCapPriceService;
     }
 
-    @EventListener(ApplicationReadyEvent.class)
+    @PostConstruct
     void schedulePriceRefreshes() {
         executorService.scheduleWithFixedDelay(this::refreshPrices,
                                                refreshPeriod,
