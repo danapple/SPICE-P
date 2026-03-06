@@ -1,6 +1,6 @@
 package com.danapple.spicep.api;
 
-import com.danapple.spicep.coincap.CoinCapPriceService;
+import com.danapple.spicep.coincap.CoinCapHistoricalPriceService;
 import com.danapple.spicep.dtos.SimulateAssetRequest;
 import com.danapple.spicep.dtos.SimulateWalletRequest;
 import com.danapple.spicep.dtos.SimulateWalletResponse;
@@ -26,11 +26,11 @@ import java.util.concurrent.Future;
 @RequestMapping("/simulate")
 class SimulationApi extends AbstractApi {
     private final static BigDecimal ONE_HUNDRED = BigDecimal.valueOf(100);
-    private final CoinCapPriceService coinCapPriceService;
+    private final CoinCapHistoricalPriceService coinCapHistoricalPriceService;
     private final Logger logger = LoggerFactory.getLogger(SimulationApi.class);
 
-    SimulationApi(final CoinCapPriceService coinCapPriceService) {
-        this.coinCapPriceService = coinCapPriceService;
+    SimulationApi(final CoinCapHistoricalPriceService coinCapHistoricalPriceService) {
+        this.coinCapHistoricalPriceService = coinCapHistoricalPriceService;
     }
 
     @PostMapping
@@ -40,7 +40,7 @@ class SimulationApi extends AbstractApi {
             Map<String, Future<BigDecimal>> futures = new HashMap<>();
             for (SimulateAssetRequest requestAsset : simulateAssetRequests) {
                 String symbol = requestAsset.getSymbol();
-                futures.put(symbol, coinCapPriceService.getPrice(symbol));
+                futures.put(symbol, coinCapHistoricalPriceService.getHistoricalPrice(symbol, request.getDate()));
             }
             BigDecimal totalValue = BigDecimal.ZERO;
             String bestSymbol = null;
@@ -88,7 +88,8 @@ class SimulationApi extends AbstractApi {
                     bestSymbol,
                     bestPerformance,
                     worstSymbol,
-                    worstPerformance);
+                    worstPerformance,
+                    request.getDate());
             HttpStatus status = HttpStatus.OK;
 
             return new ResponseEntity<>(response,

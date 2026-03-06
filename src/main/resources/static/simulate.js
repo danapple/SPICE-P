@@ -2,7 +2,9 @@ let update_message = document.getElementById('update_message');
 let symbol_input = document.getElementById('symbol_input');
 let value_input = document.getElementById('value_input');
 let quantity_input = document.getElementById('quantity_input');
+let simulation_date = document.getElementById('simulation_date');
 
+let simulation_date_display = document.getElementById('simulation_date_display');
 let simulation_total = document.getElementById('simulation_total');
 let best_asset = document.getElementById('best_asset');
 let worst_asset = document.getElementById('worst_asset');
@@ -137,6 +139,7 @@ function refreshAssetsTable() {
 function clearAllAssets() {
     assets = [];
     refreshAssetsTable();
+    simulation_date_display.innerHTML = "";
     simulation_total.innerHTML = "";
     best_asset.innerHTML = "";
     worst_asset.innerHTML = "";
@@ -160,15 +163,42 @@ function runSimulation() {
         quantity: a.quantity
     }));
 
-    let requestBody = JSON.stringify({
+    let requestBody = {
         assets: requestAssets
-    });
+    };
 
-    xhttp.send(requestBody);
+    // Add simulation date if provided (convert to YYYY-MM-DD format)
+    if (simulation_date.value) {
+        let dateObj = $('#simulation_date').datepicker('getDate');
+        if (dateObj) {
+            let year = dateObj.getFullYear();
+            let month = String(dateObj.getMonth() + 1).padStart(2, '0');
+            let day = String(dateObj.getDate()).padStart(2, '0');
+            requestBody.date = year + '-' + month + '-' + day;
+        }
+    }
+
+    xhttp.send(JSON.stringify(requestBody));
     displayMessage("Running simulation...");
 }
 
 function displaySimulationResults(results) {
+    // Display date in dd MMM yyyy format
+    if (results.date) {
+        let dateParts = results.date.split('-');
+        if (dateParts.length === 3) {
+            let dateObj = new Date(dateParts[0], dateParts[1] - 1, dateParts[2]);
+            let monthNames = ['January', 'February', 'March', 'April', 'May', 'June',
+                            'July', 'August', 'September', 'October', 'November', 'December'];
+            simulation_date_display.innerHTML =
+                String(dateObj.getDate()).padStart(2, '0') + ' ' +
+                monthNames[dateObj.getMonth()] + ' ' +
+                dateObj.getFullYear();
+        } else {
+            simulation_date_display.innerHTML = results.date;
+        }
+    }
+
     simulation_total.innerHTML = renderCurrency(results.total);
 
     if (results.best_asset) {
@@ -201,6 +231,17 @@ value_input.addEventListener('keypress', function(e) {
 });
 quantity_input.addEventListener('keypress', function(e) {
     if (e.key === 'Enter') addAsset();
+});
+
+// Initialize datepicker with dd MMM yyyy format
+$('#simulation_date').datepicker({
+    dateFormat: 'dd MM yy',
+    changeMonth: true,
+    changeYear: true,
+    yearRange: '2008:' + new Date().getFullYear(),
+    maxDate: 0,  // Prevent future dates (0 = today)
+    showButtonPanel: false,
+    monthNamesShort: ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']
 });
 
 displayMessage("Welcome to Portfolio Simulation - Add assets to get started");

@@ -1,6 +1,6 @@
 package com.danapple.spicep.api;
 
-import com.danapple.spicep.coincap.CoinCapPriceService;
+import com.danapple.spicep.coincap.CoinCapHistoricalPriceService;
 import com.danapple.spicep.dtos.SimulateAssetRequest;
 import com.danapple.spicep.dtos.SimulateWalletRequest;
 import com.danapple.spicep.dtos.SimulateWalletResponse;
@@ -19,21 +19,23 @@ import java.util.concurrent.CompletableFuture;
 import static com.danapple.spicep.common.TestConstants.SYMBOL_BTC;
 import static com.danapple.spicep.common.TestConstants.SYMBOL_ETH;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 public class SimulationApiTest {
     @Mock(lenient = true)
-    private CoinCapPriceService coinCapPriceService;
+    private CoinCapHistoricalPriceService coinCapHistoricalPriceService;
 
     private SimulationApi simulationApi;
 
     @BeforeEach
     public void beforeEach() {
-        when(coinCapPriceService.getPrice(SYMBOL_BTC)).thenReturn(CompletableFuture.completedFuture(BigDecimal.TWO));
-        when(coinCapPriceService.getPrice(SYMBOL_ETH)).thenReturn(CompletableFuture.completedFuture(BigDecimal.TEN));
+        when(coinCapHistoricalPriceService.getHistoricalPrice(eq(SYMBOL_BTC), any())).thenReturn(CompletableFuture.completedFuture(BigDecimal.TWO));
+        when(coinCapHistoricalPriceService.getHistoricalPrice(eq(SYMBOL_ETH), any())).thenReturn(CompletableFuture.completedFuture(BigDecimal.TEN));
 
-        simulationApi = new SimulationApi(coinCapPriceService);
+        simulationApi = new SimulationApi(coinCapHistoricalPriceService);
     }
 
     @Test
