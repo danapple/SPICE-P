@@ -83,7 +83,7 @@ public class CoinCapHistoricalPriceService extends AbstractCoinCapService {
     private BigDecimal getPrice(RestTemplate restTemplate, HttpEntity<String> entity, String slug, LocalDate date) {
         long startOfDay = date.atStartOfDay().toEpochSecond(ZoneOffset.UTC) * 1000;
         long endOfDay = date.plus(1, ChronoUnit.DAYS).atStartOfDay().toEpochSecond(ZoneOffset.UTC) * 1000;
-        String thisUrl = "%s/assets/%s/history?interval=m1&start=%d&end=%d".formatted(url,
+        String thisUrl = "%s/assets/%s/history?interval=d1&start=%d&end=%d".formatted(url,
                 slug,
                 startOfDay,
                 endOfDay);
