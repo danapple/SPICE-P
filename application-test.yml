@@ -28,7 +28,7 @@ spicep:
       migrationsLocation: filesystem:src/main/resources/migrations
   coinCapPriceService:
     apiKey: ${COINCAP_API_KEY}
-    url: https://rest.coincap.io/v3
+    url: ${COINCAP_URL}
     threadCount: 3
   refreshService:
     refreshPeriod: 10
