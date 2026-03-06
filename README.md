@@ -9,5 +9,7 @@ Other tunable parameters can be seen in application.yml
 build: mvn install
 run: java -jar target/spicep-1.0-SNAPSHOT.jar
 
-create a container: docker build .
-run: docker run ......
+Once running, there is a UI available on port 8080:
+http://localhost:8080
+
+The listening port can be set with the LISTENING_PORT environment variable.
