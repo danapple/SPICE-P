@@ -244,4 +244,4 @@ $('#simulation_date').datepicker({
     monthNamesShort: ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']
 });
 
-displayMessage("Welcome to Portfolio Simulation - Add assets to get started");
+displayMessage("Welcome to Wallet Profit Simulation - Add assets to get started");
