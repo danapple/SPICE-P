@@ -104,6 +104,7 @@ class WalletApi extends AbstractApi {
                                                             position.quantity(),
                                                             costBasis,
                                                             position.cost(),
+                                                            price,
                                                             value,
                                                             gain,
                                                             position.closedGain());
