@@ -81,7 +81,7 @@ class SimulationApi extends AbstractApi {
                 BigDecimal price = future.get();
                 if (price == null) {
                     return createErrorResponse("No price found for token %s".formatted(symbol),
-                            HttpStatus.INTERNAL_SERVER_ERROR);
+                            HttpStatus.NOT_FOUND);
                 }
                 BigDecimal currentValue = requestAsset.getQuantity().multiply(price);
                 totalValue = totalValue.add(currentValue);

@@ -49,7 +49,7 @@ class WalletApi extends AbstractApi {
         emailAddress = emailAddress.trim();
         if (emailAddress.isEmpty() ||
                 emailAddress.length() > 200) {
-            return createErrorResponse("emailAddress must be between 1 and 200 characters",
+            return createErrorResponse("Email address must be between 1 and 200 characters",
                     HttpStatus.PRECONDITION_FAILED);
         }
         Wallet wallet = new Wallet(UUID.randomUUID().toString(), emailAddress);
@@ -158,7 +158,6 @@ class WalletApi extends AbstractApi {
                     HttpStatus.NOT_FOUND);
         }
 
-
         Position existingPosition = walletDao.getPosition(walletKey,
                                                           tokenKey);
         if (existingPosition == null) {
@@ -207,9 +206,7 @@ class WalletApi extends AbstractApi {
                 openingQuantity = BigDecimal.ZERO;
             }
 
-            BigDecimal costBasis = position.quantity().compareTo(BigDecimal.ZERO) == 0 ?
-                    BigDecimal.ZERO :
-                    position.cost().divide(position.quantity(),
+            BigDecimal costBasis = position.cost().divide(position.quantity(),
                                            RoundingMode.HALF_UP);
 
             BigDecimal closingCost = closingQuantity.multiply(costBasis);

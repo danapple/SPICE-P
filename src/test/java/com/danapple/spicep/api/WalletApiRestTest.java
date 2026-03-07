@@ -1,6 +1,7 @@
 package com.danapple.spicep.api;
 
 import com.danapple.spicep.testdtos.*;
+import org.assertj.core.api.AssertionsForClassTypes;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -78,7 +79,6 @@ class WalletApiRestTest extends AbstractRestTest {
         assertThat(assetPosition.quantity()).isEqualByComparingTo(BigDecimal.TEN);
         assertThat(assetPosition.cost()).isEqualByComparingTo(BigDecimal.valueOf(20));
         assertThat(assetPosition.closedGain()).isEqualByComparingTo(BigDecimal.ZERO);
-
     }
 
     @Test
@@ -123,6 +123,75 @@ class WalletApiRestTest extends AbstractRestTest {
         assertThat(assetPosition.quantity()).isEqualByComparingTo(BigDecimal.valueOf(9));
         assertThat(assetPosition.cost()).isEqualByComparingTo(BigDecimal.valueOf(18));
         assertThat(assetPosition.closedGain()).isEqualByComparingTo(BigDecimal.ONE.negate());
+
+    }
+
+    @Test
+    void flattensPosition() {
+        ResponseEntity<TestCreateWalletResponse> createResponse =
+                template.postForEntity("/wallets",
+                        new TestCreateWalletRequest("flattensPosition@WalletApiTest.com"),
+                        TestCreateWalletResponse.class);
+        assertThat(createResponse.getStatusCode()).isEqualTo(HttpStatus.CREATED);
+
+        String walletKey = createResponse.getBody().id();
+        TestAddAssetRequest addAssetRequest = new TestAddAssetRequest();
+        addAssetRequest.setSymbol("BTC");
+        addAssetRequest.setPrice(BigDecimal.TWO);
+        addAssetRequest.setQuantity(BigDecimal.TEN);
+
+        ResponseEntity<String> addAssetResponse =
+                template.postForEntity("/wallets/%s/assets".formatted(walletKey),
+                        addAssetRequest,
+                        String.class);
+        assertThat(addAssetResponse.getStatusCode()).isEqualTo(HttpStatus.OK);
+
+        TestAddAssetRequest reduceAssetRequest = new TestAddAssetRequest();
+        reduceAssetRequest.setSymbol("BTC");
+        reduceAssetRequest.setPrice(BigDecimal.ONE);
+        reduceAssetRequest.setQuantity(BigDecimal.TEN.negate());
+
+        ResponseEntity<String> reduceAssetResponse =
+                template.postForEntity("/wallets/%s/assets".formatted(walletKey),
+                        reduceAssetRequest,
+                        String.class);
+        assertThat(reduceAssetResponse.getStatusCode()).isEqualTo(HttpStatus.OK);
+
+        ResponseEntity<TestGetWalletResponse> getResponse =
+                template.getForEntity("/wallets/%s".formatted(createResponse.getBody().id()),
+                        TestGetWalletResponse.class);
+        assertThat(getResponse.getStatusCode()).isEqualTo(HttpStatus.OK);
+        TestGetWalletResponse getWalletResponse = getResponse.getBody();
+        assertThat(getWalletResponse.assets().size()).isEqualTo(1);
+        TestAssetPosition assetPosition = getWalletResponse.assets().getFirst();
+        assertThat(assetPosition.symbol()).isEqualTo("BTC");
+        assertThat(assetPosition.quantity()).isEqualByComparingTo(BigDecimal.ZERO);
+        assertThat(assetPosition.cost()).isEqualByComparingTo(BigDecimal.ZERO);
+        assertThat(assetPosition.closedGain()).isEqualByComparingTo(BigDecimal.TEN.negate());
+    }
+
+    @Test
+    void rejectsUnknownToken() {
+        ResponseEntity<TestCreateWalletResponse> createResponse =
+                template.postForEntity("/wallets",
+                        new TestCreateWalletRequest("rejectsUnknownToken@WalletApiTest.com"),
+                        TestCreateWalletResponse.class);
+        assertThat(createResponse.getStatusCode()).isEqualTo(HttpStatus.CREATED);
+
+        String walletKey = createResponse.getBody().id();
+        TestAddAssetRequest addAssetRequest = new TestAddAssetRequest();
+        addAssetRequest.setSymbol("foobardontbotherme");
+        addAssetRequest.setPrice(BigDecimal.TWO);
+        addAssetRequest.setQuantity(BigDecimal.TEN);
+
+        ResponseEntity<String> addAssetResponse =
+                template.postForEntity("/wallets/%s/assets".formatted(walletKey),
+                        addAssetRequest,
+                        String.class);
+        assertThat(addAssetResponse.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
+        AssertionsForClassTypes.assertThat(addAssetResponse.getBody()).isInstanceOf(String.class);
+        String errorMessage = addAssetResponse.getBody();
+        AssertionsForClassTypes.assertThat(errorMessage).contains("was not found");
 
     }
 }

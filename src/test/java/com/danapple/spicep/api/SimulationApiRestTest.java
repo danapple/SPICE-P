@@ -88,4 +88,26 @@ public class SimulationApiRestTest extends AbstractRestTest {
                 .isCloseTo(WALLET_BTC_ETH_VALUE_2025_03_03, Percentage.withPercentage(1));
 
     }
+
+    @Test
+    void rejectsUnknownSymbol() {
+        List<TestSimulateAssetRequest> assets = new ArrayList<>();
+        TestSimulateAssetRequest assetRequest = new TestSimulateAssetRequest();
+        assetRequest.setSymbol("thefaneoffife");
+        assetRequest.setValue(BigDecimal.valueOf(35000));
+        assetRequest.setQuantity(BigDecimal.valueOf(.5));
+        assets.add(assetRequest);
+
+        TestSimulateWalletRequest simluateWalletRequest = new TestSimulateWalletRequest();
+        simluateWalletRequest.setAssets(assets);
+        simluateWalletRequest.setDate(DATE_2025_03_03);
+
+        ResponseEntity<String> response =
+                template.postForEntity("/simulate",
+                        simluateWalletRequest,
+                        String.class);
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
+        assertThat(response.getBody()).contains("No price found for token");
+    }
+
 }
