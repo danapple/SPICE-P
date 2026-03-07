@@ -82,6 +82,39 @@ class WalletApiRestTest extends AbstractRestTest {
     }
 
     @Test
+    void trimsAndUpperCasesSymbol() {
+        ResponseEntity<TestCreateWalletResponse> createResponse =
+                template.postForEntity("/wallets",
+                        new TestCreateWalletRequest("trimsAndUpperCasesSymbol@WalletApiTest.com"),
+                        TestCreateWalletResponse.class);
+        assertThat(createResponse.getStatusCode()).isEqualTo(HttpStatus.CREATED);
+
+        String walletKey = createResponse.getBody().id();
+        TestAddAssetRequest addAssetRequest = new TestAddAssetRequest();
+        addAssetRequest.setSymbol(" BtC ");
+        addAssetRequest.setPrice(BigDecimal.TWO);
+        addAssetRequest.setQuantity(BigDecimal.TEN);
+
+        ResponseEntity<String> addAssetResponse =
+                template.postForEntity("/wallets/%s/assets".formatted(walletKey),
+                        addAssetRequest,
+                        String.class);
+        assertThat(addAssetResponse.getStatusCode()).isEqualTo(HttpStatus.OK);
+
+        ResponseEntity<TestGetWalletResponse> getResponse =
+                template.getForEntity("/wallets/%s".formatted(createResponse.getBody().id()),
+                        TestGetWalletResponse.class);
+        assertThat(getResponse.getStatusCode()).isEqualTo(HttpStatus.OK);
+        TestGetWalletResponse getWalletResponse = getResponse.getBody();
+        assertThat(getWalletResponse.assets().size()).isEqualTo(1);
+        TestAssetPosition assetPosition = getWalletResponse.assets().getFirst();
+        assertThat(assetPosition.symbol()).isEqualTo("BTC");
+        assertThat(assetPosition.quantity()).isEqualByComparingTo(BigDecimal.TEN);
+        assertThat(assetPosition.cost()).isEqualByComparingTo(BigDecimal.valueOf(20));
+        assertThat(assetPosition.closedGain()).isEqualByComparingTo(BigDecimal.ZERO);
+    }
+
+    @Test
     void reducesPosition() {
         ResponseEntity<TestCreateWalletResponse> createResponse =
                 template.postForEntity("/wallets",

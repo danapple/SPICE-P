@@ -53,6 +53,37 @@ public class SimulationApiRestTest extends AbstractRestTest {
     }
 
     @Test
+    void trimsAndUpperCasesSymbol() {
+        List<TestSimulateAssetRequest> assets = new ArrayList<>();
+        TestSimulateAssetRequest assetRequest = new TestSimulateAssetRequest();
+        assetRequest.setSymbol(" BtC ");
+        assetRequest.setValue(BigDecimal.valueOf(35000));
+        assetRequest.setQuantity(BigDecimal.valueOf(.5));
+        assets.add(assetRequest);
+
+        TestSimulateWalletRequest simluateWalletRequest = new TestSimulateWalletRequest();
+        simluateWalletRequest.setAssets(assets);
+        simluateWalletRequest.setDate(DATE_2025_03_03);
+
+        ResponseEntity<TestSimulateWalletResponse> response =
+                template.postForEntity("/simulate",
+                        simluateWalletRequest,
+                        TestSimulateWalletResponse.class);
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+        TestSimulateWalletResponse simulateWalletResponse = response.getBody();
+        assertThat(simulateWalletResponse.best_asset()).isEqualTo("BTC");
+        assertThat(simulateWalletResponse.best_asset()).isEqualTo(simulateWalletResponse.worst_asset());
+
+        assertThat(simulateWalletResponse.best_performance())
+                .isCloseTo(BigDecimal.valueOf(23.11), Percentage.withPercentage(1));
+        assertThat(simulateWalletResponse.best_performance())
+                .isEqualByComparingTo(simulateWalletResponse.worst_performance());
+
+        assertThat(simulateWalletResponse.total())
+                .isCloseTo(WALLET_BTC_VALUE_2025_03_03, Percentage.withPercentage(1));
+    }
+
+    @Test
     void simulateWithTwoAssetsReturnsDifferentBestAndWorst() {
         List<TestSimulateAssetRequest> assets = new ArrayList<>();
         TestSimulateAssetRequest assetRequestBtc = new TestSimulateAssetRequest();
