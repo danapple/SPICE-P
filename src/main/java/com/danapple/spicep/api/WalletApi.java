@@ -39,9 +39,19 @@ class WalletApi extends AbstractApi {
     }
 
     @PostMapping
-    ResponseEntity<CreateWalletResponse> createWallet(@RequestBody CreateWalletRequest request) {
+    ResponseEntity<? extends Object> createWallet(@RequestBody CreateWalletRequest request) {
         logger.debug("createWallet {}", request);
         String emailAddress = request.getEmailAddress();
+        if (emailAddress == null ) {
+            return createErrorResponse("Email address must be supplied",
+                    HttpStatus.PRECONDITION_FAILED);
+        }
+        emailAddress = emailAddress.trim();
+        if (emailAddress.isEmpty() ||
+                emailAddress.length() > 200) {
+            return createErrorResponse("emailAddress must be between 1 and 200 characters",
+                    HttpStatus.PRECONDITION_FAILED);
+        }
         Wallet wallet = new Wallet(UUID.randomUUID().toString(), emailAddress);
         logger.debug("Trying to save wallet {}", wallet);
         HttpStatus status;
@@ -116,22 +126,39 @@ class WalletApi extends AbstractApi {
     ResponseEntity<? extends Object> adjustPosition(@PathVariable("walletKey") String walletKey,
                                                     @RequestBody AddAssetRequest request) {
         logger.debug("addAsset for walletKey {}: {}", walletKey, request);
+        String symbol = request.getSymbol();
+        if (symbol == null) {
+            return createErrorResponse("Symbol must be supplied", HttpStatus.PRECONDITION_FAILED);
+        }
+        symbol = symbol.trim().toUpperCase();
+        if (symbol.isEmpty() ||
+                symbol.length() > 200) {
+            return createErrorResponse("Symbol must be between 1 and 200 characters",
+                    HttpStatus.PRECONDITION_FAILED);
+        }
+        if (request.getQuantity() == null) {
+            return createErrorResponse("Quantity must be supplied", HttpStatus.PRECONDITION_FAILED);
+        }
+        if (request.getPrice() == null) {
+            return createErrorResponse("Price must be supplied", HttpStatus.PRECONDITION_FAILED);
+        }
+        if (request.getQuantity().compareTo(BigDecimal.ZERO) == 0) {
+            return createErrorResponse("Quantity of 0 is not allowed", HttpStatus.PRECONDITION_FAILED);
+        }
+
         Wallet wallet = walletDao.getWallet(walletKey);
         if (wallet == null) {
             logger.debug("Wallet {} does not exist", walletKey);
             return createErrorResponse("Wallet not found", HttpStatus.NOT_FOUND);
         }
-        String symbol = request.getSymbol();
+
         String tokenKey = setupToken(symbol);
         if (tokenKey == null) {
-            logger.debug("Token {} does not exist", symbol);
-            return createErrorResponse("Token not found", HttpStatus.NOT_FOUND);
+            return createErrorResponse("Token %s was not found".formatted(symbol),
+                    HttpStatus.NOT_FOUND);
         }
 
-        if (request.getQuantity().compareTo(BigDecimal.ZERO) == 0) {
-            logger.debug("adjustPosition with quantity 0 rejected");
-            return createErrorResponse("Quantity 0 not allowed", HttpStatus.PRECONDITION_FAILED);
-        }
+
         Position existingPosition = walletDao.getPosition(walletKey,
                                                           tokenKey);
         if (existingPosition == null) {

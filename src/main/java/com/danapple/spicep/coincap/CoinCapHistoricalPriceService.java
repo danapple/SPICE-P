@@ -48,6 +48,10 @@ public class CoinCapHistoricalPriceService extends AbstractCoinCapService {
                                                          getHeaders());
 
             String slug = searchForSlug(restTemplate, entity, symbol);
+            if (slug == null) {
+                logger.debug("No slug found for symbol {}", symbol);
+                return null;
+            }
             BigDecimal price = getPrice(restTemplate, entity, slug, date);
             logger.debug("Got price {} for symbol {} on {}",
                     price,
@@ -73,6 +77,10 @@ public class CoinCapHistoricalPriceService extends AbstractCoinCapService {
         logger.trace("Result = {}",
                 result);
         SearchResponse body = result.getBody();
+        if (body.data.isEmpty()) {
+            logger.debug("No slugs returned  for symbol {}", symbol);
+            return null;
+        }
         SearchData searchData = body.data.getFirst();
         logger.debug("Got slug {} for symbol {}",
                 searchData.id,

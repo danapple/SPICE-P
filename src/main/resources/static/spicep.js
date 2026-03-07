@@ -127,6 +127,9 @@ function addAsset() {
         return;
     }
     let xhttp = makeXhttp("POST", "/wallets/" + tokenKey + "/assets", (status, body) => {
+        symbol_input.value = "";
+        price_input.value = "";
+        quantity_input.value = "";
         refreshWallet();
     });
 
@@ -136,9 +139,6 @@ function addAsset() {
         quantity: quantity_input.value
     });
     xhttp.send(body);
-    symbol_input.value = "";
-    price_input.value = "";
-    quantity_input.value = "";
 }
 
 function displayPositions(wallet_data) {

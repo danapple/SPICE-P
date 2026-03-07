@@ -12,6 +12,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.ResponseEntity;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
@@ -29,6 +30,8 @@ public class SimulationApiTest {
     private CoinCapHistoricalPriceService coinCapHistoricalPriceService;
 
     private SimulationApi simulationApi;
+
+    private final static LocalDate DATE_2025_03_03 = LocalDate.of(2025, 3, 3);
 
     @BeforeEach
     public void beforeEach() {
@@ -49,6 +52,7 @@ public class SimulationApiTest {
 
         SimulateWalletRequest simluateWalletRequest = new SimulateWalletRequest();
         simluateWalletRequest.setAssets(assets);
+        simluateWalletRequest.setDate(DATE_2025_03_03);
 
         ResponseEntity<? extends Object> responseEntity = simulationApi.simulateWallet(simluateWalletRequest);
         Object body = responseEntity.getBody();
@@ -70,6 +74,7 @@ public class SimulationApiTest {
 
         SimulateWalletRequest simluateWalletRequest = new SimulateWalletRequest();
         simluateWalletRequest.setAssets(assets);
+        simluateWalletRequest.setDate(DATE_2025_03_03);
 
         ResponseEntity<? extends Object> responseEntity = simulationApi.simulateWallet(simluateWalletRequest);
         Object body = responseEntity.getBody();
@@ -97,6 +102,7 @@ public class SimulationApiTest {
 
         SimulateWalletRequest simluateWalletRequest = new SimulateWalletRequest();
         simluateWalletRequest.setAssets(assets);
+        simluateWalletRequest.setDate(DATE_2025_03_03);
 
         ResponseEntity<? extends Object> responseEntity = simulationApi.simulateWallet(simluateWalletRequest);
         Object body = responseEntity.getBody();

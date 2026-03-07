@@ -83,7 +83,7 @@ function addAsset() {
     let value = parseFloat(value_input.value);
     let quantity = parseFloat(quantity_input.value);
 
-    if (!symbol || isNaN(value) || isNaN(quantity)) {
+    if (!symbol || isNaN(value) || value === 0 || isNaN(quantity) || quantity === 0) {
         displayMessage("Please enter valid symbol, value, and quantity");
         return;
     }

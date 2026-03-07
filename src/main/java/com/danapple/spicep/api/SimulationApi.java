@@ -36,10 +36,34 @@ class SimulationApi extends AbstractApi {
     @PostMapping
     ResponseEntity<? extends Object> simulateWallet(@RequestBody SimulateWalletRequest request) {
         try {
+            if (request.getDate() == null) {
+                return createErrorResponse("Date must be supplied", HttpStatus.PRECONDITION_FAILED);
+            }
             List<SimulateAssetRequest> simulateAssetRequests = request.getAssets();
             Map<String, Future<BigDecimal>> futures = new HashMap<>();
             for (SimulateAssetRequest requestAsset : simulateAssetRequests) {
                 String symbol = requestAsset.getSymbol();
+                if (symbol == null) {
+                    return createErrorResponse("Symbol must be supplied", HttpStatus.PRECONDITION_FAILED);
+                }
+                symbol = symbol.trim().toUpperCase();
+                if (symbol.isEmpty() ||
+                        symbol.length() > 200) {
+                    return createErrorResponse("Symbol must be between 1 and 200 characters",
+                            HttpStatus.PRECONDITION_FAILED);
+                }
+                if (requestAsset.getQuantity() == null) {
+                    return createErrorResponse("Quantity must be supplied", HttpStatus.PRECONDITION_FAILED);
+                }
+                if (requestAsset.getValue() == null) {
+                    return createErrorResponse("Value must be supplied", HttpStatus.PRECONDITION_FAILED);
+                }
+                if (requestAsset.getQuantity().compareTo(BigDecimal.ZERO) == 0) {
+                    return createErrorResponse("Quantity of 0 is not allowed", HttpStatus.PRECONDITION_FAILED);
+                }
+                if (requestAsset.getValue().compareTo(BigDecimal.ZERO) == 0) {
+                    return createErrorResponse("Value of 0 is not allowed", HttpStatus.PRECONDITION_FAILED);
+                }
                 futures.put(symbol, coinCapHistoricalPriceService.getHistoricalPrice(symbol, request.getDate()));
             }
             BigDecimal totalValue = BigDecimal.ZERO;
@@ -52,9 +76,13 @@ class SimulationApi extends AbstractApi {
             BigDecimal worstPerformance = BigDecimal.ZERO;
 
             for (SimulateAssetRequest requestAsset : simulateAssetRequests) {
-                String symbol = requestAsset.getSymbol();
-                Future<BigDecimal> future = futures.get(requestAsset.getSymbol());
+                String symbol = requestAsset.getSymbol().trim().toUpperCase();
+                Future<BigDecimal> future = futures.get(symbol);
                 BigDecimal price = future.get();
+                if (price == null) {
+                    return createErrorResponse("No price found for token %s".formatted(symbol),
+                            HttpStatus.INTERNAL_SERVER_ERROR);
+                }
                 BigDecimal currentValue = requestAsset.getQuantity().multiply(price);
                 totalValue = totalValue.add(currentValue);
                 BigDecimal gain = currentValue.subtract(requestAsset.getValue());
