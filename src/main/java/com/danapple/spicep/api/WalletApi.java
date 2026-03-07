@@ -39,7 +39,7 @@ class WalletApi extends AbstractApi {
     }
 
     @PostMapping
-    ResponseEntity<? extends Object> createWallet(@RequestBody CreateWalletRequest request) {
+    ResponseEntity<?> createWallet(@RequestBody CreateWalletRequest request) {
         logger.debug("createWallet {}", request);
         String emailAddress = request.getEmailAddress();
         if (emailAddress == null ) {
@@ -72,7 +72,7 @@ class WalletApi extends AbstractApi {
     }
 
     @GetMapping("/{walletKey}")
-    ResponseEntity<? extends Object> getWallet(@PathVariable("walletKey") String walletKey) {
+    ResponseEntity<?> getWallet(@PathVariable("walletKey") String walletKey) {
         logger.debug("getWallet for walletKey {}", walletKey);
 
         Wallet wallet = walletDao.getWallet(walletKey);
@@ -123,7 +123,7 @@ class WalletApi extends AbstractApi {
     }
 
     @PostMapping("/{walletKey}/assets")
-    ResponseEntity<? extends Object> adjustPosition(@PathVariable("walletKey") String walletKey,
+    ResponseEntity<?> adjustPosition(@PathVariable("walletKey") String walletKey,
                                                     @RequestBody AddAssetRequest request) {
         logger.debug("addAsset for walletKey {}: {}", walletKey, request);
         String symbol = request.getSymbol();

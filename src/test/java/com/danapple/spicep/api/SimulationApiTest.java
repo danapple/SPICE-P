@@ -56,7 +56,7 @@ public class SimulationApiTest {
         simluateWalletRequest.setAssets(assets);
         simluateWalletRequest.setDate(DATE_2025_03_03);
 
-        ResponseEntity<? extends Object> responseEntity = simulationApi.simulateWallet(simluateWalletRequest);
+        ResponseEntity<?> responseEntity = simulationApi.simulateWallet(simluateWalletRequest);
         Object body = responseEntity.getBody();
         assertThat(body).isInstanceOf(SimulateWalletResponse.class);
 
@@ -78,7 +78,7 @@ public class SimulationApiTest {
         simluateWalletRequest.setAssets(assets);
         simluateWalletRequest.setDate(DATE_2025_03_03);
 
-        ResponseEntity<? extends Object> responseEntity = simulationApi.simulateWallet(simluateWalletRequest);
+        ResponseEntity<?> responseEntity = simulationApi.simulateWallet(simluateWalletRequest);
         Object body = responseEntity.getBody();
         assertThat(body).isInstanceOf(SimulateWalletResponse.class);
 
@@ -106,7 +106,7 @@ public class SimulationApiTest {
         simluateWalletRequest.setAssets(assets);
         simluateWalletRequest.setDate(DATE_2025_03_03);
 
-        ResponseEntity<? extends Object> responseEntity = simulationApi.simulateWallet(simluateWalletRequest);
+        ResponseEntity<?> responseEntity = simulationApi.simulateWallet(simluateWalletRequest);
         Object body = responseEntity.getBody();
         assertThat(body).isInstanceOf(SimulateWalletResponse.class);
 

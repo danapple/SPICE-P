@@ -34,7 +34,7 @@ class SimulationApi extends AbstractApi {
     }
 
     @PostMapping
-    ResponseEntity<? extends Object> simulateWallet(@RequestBody SimulateWalletRequest request) {
+    ResponseEntity<?> simulateWallet(@RequestBody SimulateWalletRequest request) {
         try {
             if (request.getDate() == null) {
                 return createErrorResponse("Date must be supplied", HttpStatus.PRECONDITION_FAILED);
