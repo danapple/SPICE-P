@@ -32,7 +32,6 @@ class WalletApiRestTest extends AbstractRestTest {
         assertThat(getResponse.getStatusCode()).isEqualTo(HttpStatus.OK);
     }
 
-
     @Test
     void returnsAlreadyCreatedWallet() {
         ResponseEntity<TestCreateWalletResponse> response =
@@ -45,6 +44,22 @@ class WalletApiRestTest extends AbstractRestTest {
                 template.postForEntity("/wallets",
                                        new TestCreateWalletRequest("returnsAlreadyCreatedWallet@WalletApiTest.com"),
                                        TestCreateWalletResponse.class);
+        assertThat(response2.getStatusCode()).isEqualTo(HttpStatus.OK);
+    }
+
+    @Test
+    void trimsEmailAddress() {
+        ResponseEntity<TestCreateWalletResponse> response =
+                template.postForEntity("/wallets",
+                        new TestCreateWalletRequest("  trimsEmailAddress@WalletApiTest.com  "),
+                        TestCreateWalletResponse.class);
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.CREATED);
+        assertThat(response.getBody().emailAddress()).isEqualTo("trimsEmailAddress@WalletApiTest.com");
+
+        ResponseEntity<TestCreateWalletResponse> response2 =
+                template.postForEntity("/wallets",
+                        new TestCreateWalletRequest("trimsEmailAddress@WalletApiTest.com"),
+                        TestCreateWalletResponse.class);
         assertThat(response2.getStatusCode()).isEqualTo(HttpStatus.OK);
     }
 
