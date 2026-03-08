@@ -30,13 +30,13 @@ public class SimulationApiRestTest extends AbstractRestTest {
         assetRequest.setQuantity(BigDecimal.valueOf(.5));
         assets.add(assetRequest);
 
-        TestSimulateWalletRequest simluateWalletRequest = new TestSimulateWalletRequest();
-        simluateWalletRequest.setAssets(assets);
-        simluateWalletRequest.setDate(DATE_2025_03_03);
+        TestSimulateWalletRequest simulateWalletRequest = new TestSimulateWalletRequest();
+        simulateWalletRequest.setAssets(assets);
+        simulateWalletRequest.setDate(DATE_2025_03_03);
 
         ResponseEntity<TestSimulateWalletResponse> response =
                 template.postForEntity("/simulate",
-                        simluateWalletRequest,
+                        simulateWalletRequest,
                         TestSimulateWalletResponse.class);
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
         TestSimulateWalletResponse simulateWalletResponse = response.getBody();
@@ -61,13 +61,13 @@ public class SimulationApiRestTest extends AbstractRestTest {
         assetRequest.setQuantity(BigDecimal.valueOf(.5));
         assets.add(assetRequest);
 
-        TestSimulateWalletRequest simluateWalletRequest = new TestSimulateWalletRequest();
-        simluateWalletRequest.setAssets(assets);
-        simluateWalletRequest.setDate(DATE_2025_03_03);
+        TestSimulateWalletRequest simulateWalletRequest = new TestSimulateWalletRequest();
+        simulateWalletRequest.setAssets(assets);
+        simulateWalletRequest.setDate(DATE_2025_03_03);
 
         ResponseEntity<TestSimulateWalletResponse> response =
                 template.postForEntity("/simulate",
-                        simluateWalletRequest,
+                        simulateWalletRequest,
                         TestSimulateWalletResponse.class);
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
         TestSimulateWalletResponse simulateWalletResponse = response.getBody();
@@ -98,13 +98,13 @@ public class SimulationApiRestTest extends AbstractRestTest {
         assetRequestEth.setQuantity(BigDecimal.valueOf(4.25));
         assets.add(assetRequestEth);
 
-        TestSimulateWalletRequest simluateWalletRequest = new TestSimulateWalletRequest();
-        simluateWalletRequest.setAssets(assets);
-        simluateWalletRequest.setDate(DATE_2025_03_03);
+        TestSimulateWalletRequest simulateWalletRequest = new TestSimulateWalletRequest();
+        simulateWalletRequest.setAssets(assets);
+        simulateWalletRequest.setDate(DATE_2025_03_03);
 
         ResponseEntity<TestSimulateWalletResponse> response =
                 template.postForEntity("/simulate",
-                        simluateWalletRequest,
+                        simulateWalletRequest,
                         TestSimulateWalletResponse.class);
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
         TestSimulateWalletResponse simulateWalletResponse = response.getBody();
@@ -129,13 +129,13 @@ public class SimulationApiRestTest extends AbstractRestTest {
         assetRequest.setQuantity(BigDecimal.valueOf(.5));
         assets.add(assetRequest);
 
-        TestSimulateWalletRequest simluateWalletRequest = new TestSimulateWalletRequest();
-        simluateWalletRequest.setAssets(assets);
-        simluateWalletRequest.setDate(DATE_2025_03_03);
+        TestSimulateWalletRequest simulateWalletRequest = new TestSimulateWalletRequest();
+        simulateWalletRequest.setAssets(assets);
+        simulateWalletRequest.setDate(DATE_2025_03_03);
 
         ResponseEntity<String> response =
                 template.postForEntity("/simulate",
-                        simluateWalletRequest,
+                        simulateWalletRequest,
                         String.class);
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
         assertThat(response.getBody()).contains("No price found for token");

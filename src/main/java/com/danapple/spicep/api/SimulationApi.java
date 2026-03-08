@@ -1,6 +1,7 @@
 package com.danapple.spicep.api;
 
 import com.danapple.spicep.coincap.CoinCapHistoricalPriceService;
+import com.danapple.spicep.coincap.CoinCapPriceService;
 import com.danapple.spicep.dtos.SimulateAssetRequest;
 import com.danapple.spicep.dtos.SimulateWalletRequest;
 import com.danapple.spicep.dtos.SimulateWalletResponse;
@@ -15,6 +16,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.time.LocalDate;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -25,18 +27,20 @@ import java.util.concurrent.Future;
 class SimulationApi extends AbstractApi {
     private final static BigDecimal ONE_HUNDRED = BigDecimal.valueOf(100);
     private final CoinCapHistoricalPriceService coinCapHistoricalPriceService;
+    private final CoinCapPriceService coinCapPriceService;
     private final Logger logger = LoggerFactory.getLogger(SimulationApi.class);
 
-    SimulationApi(final CoinCapHistoricalPriceService coinCapHistoricalPriceService) {
+    SimulationApi(final CoinCapPriceService coinCapPriceService,
+                  final CoinCapHistoricalPriceService coinCapHistoricalPriceService) {
+        this.coinCapPriceService = coinCapPriceService;
         this.coinCapHistoricalPriceService = coinCapHistoricalPriceService;
     }
 
     @PostMapping
     ResponseEntity<?> simulateWallet(@RequestBody SimulateWalletRequest request) {
         try {
-            if (request.getDate() == null) {
-                return createErrorResponse("Date must be supplied", HttpStatus.PRECONDITION_FAILED);
-            }
+            LocalDate date = request.getDate();
+            LocalDate nowDate = LocalDate.now();
             List<SimulateAssetRequest> simulateAssetRequests = request.getAssets();
             Map<String, Future<BigDecimal>> futures = new HashMap<>();
             for (SimulateAssetRequest requestAsset : simulateAssetRequests) {
@@ -62,7 +66,12 @@ class SimulationApi extends AbstractApi {
                 if (requestAsset.getValue().compareTo(BigDecimal.ZERO) == 0) {
                     return createErrorResponse("Value of 0 is not allowed", HttpStatus.PRECONDITION_FAILED);
                 }
-                futures.put(symbol, coinCapHistoricalPriceService.getHistoricalPrice(symbol, request.getDate()));
+                if (date == null || date.equals(nowDate)) {
+                    futures.put(symbol, coinCapPriceService.getPrice(symbol));
+                }
+                else {
+                    futures.put(symbol, coinCapHistoricalPriceService.getHistoricalPrice(symbol, request.getDate()));
+                }
             }
             BigDecimal totalValue = BigDecimal.ZERO;
             String bestSymbol = null;
@@ -109,13 +118,16 @@ class SimulationApi extends AbstractApi {
                     worstPerformance = currentPerformance;
                 }
             }
-
+            LocalDate responseDate = date;
+            if (responseDate == null) {
+                responseDate = nowDate;
+            }
             SimulateWalletResponse response = new SimulateWalletResponse(totalValue,
                     bestSymbol,
                     bestPerformance,
                     worstSymbol,
                     worstPerformance,
-                    request.getDate());
+                    responseDate);
             HttpStatus status = HttpStatus.OK;
 
             return new ResponseEntity<>(response,
