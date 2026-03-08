@@ -97,6 +97,44 @@ class WalletApiRestTest extends AbstractRestTest {
     }
 
     @Test
+    void computesValueAndOpenGainOfPosition() {
+        ResponseEntity<TestCreateWalletResponse> createResponse =
+                template.postForEntity("/wallets",
+                        new TestCreateWalletRequest("computesValueOfPosition@WalletApiTest.com"),
+                        TestCreateWalletResponse.class);
+        assertThat(createResponse.getStatusCode()).isEqualTo(HttpStatus.CREATED);
+
+        String walletKey = createResponse.getBody().id();
+        TestAddAssetRequest addAssetRequest = new TestAddAssetRequest();
+        addAssetRequest.setSymbol("BTC");
+        addAssetRequest.setPrice(BigDecimal.TWO);
+        addAssetRequest.setQuantity(BigDecimal.TEN);
+
+        ResponseEntity<String> addAssetResponse =
+                template.postForEntity("/wallets/%s/assets".formatted(walletKey),
+                        addAssetRequest,
+                        String.class);
+        assertThat(addAssetResponse.getStatusCode()).isEqualTo(HttpStatus.OK);
+
+        ResponseEntity<TestGetWalletResponse> getResponse =
+                template.getForEntity("/wallets/%s".formatted(createResponse.getBody().id()),
+                        TestGetWalletResponse.class);
+        assertThat(getResponse.getStatusCode()).isEqualTo(HttpStatus.OK);
+        TestGetWalletResponse getWalletResponse = getResponse.getBody();
+        assertThat(getWalletResponse.assets().size()).isEqualTo(1);
+        TestAssetPosition assetPosition = getWalletResponse.assets().getFirst();
+        BigDecimal quantity = assetPosition.quantity();
+        BigDecimal cost = assetPosition.cost();
+        BigDecimal value = assetPosition.value();
+        BigDecimal openGain = assetPosition.openGain();
+        BigDecimal mark = assetPosition.mark();
+
+        assertThat(mark).isGreaterThanOrEqualTo(BigDecimal.valueOf(10000));
+        assertThat(value).isEqualByComparingTo(mark.multiply(quantity));
+        assertThat(openGain).isEqualByComparingTo(value.subtract(cost));
+    }
+
+    @Test
     void trimsAndUpperCasesSymbol() {
         ResponseEntity<TestCreateWalletResponse> createResponse =
                 template.postForEntity("/wallets",
