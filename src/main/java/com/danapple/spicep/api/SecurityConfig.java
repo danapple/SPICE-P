@@ -21,6 +21,4 @@ class SecurityConfig {
                 .csrf(AbstractHttpConfigurer::disable)
                 .build();
     }
-
-
 }

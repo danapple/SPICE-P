@@ -17,7 +17,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
 @Service
-public class PriceRefreshService {
+class PriceRefreshService {
     private final Logger logger = LoggerFactory.getLogger(PriceRefreshService.class);
 
     private final TokenDao tokenDao;

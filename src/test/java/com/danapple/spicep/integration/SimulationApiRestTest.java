@@ -1,4 +1,4 @@
-package com.danapple.spicep.api;
+package com.danapple.spicep.integration;
 
 import com.danapple.spicep.testdtos.TestSimulateAssetRequest;
 import com.danapple.spicep.testdtos.TestSimulateWalletRequest;

@@ -68,7 +68,5 @@ public class PriceRefreshServiceTest {
         priceRefreshService.refreshPrices();
         verify(tokenDao).savePrice(eq(TOKEN_KEY_BTC), eq(BigDecimal.ONE));
         verify(tokenDao).savePrice(eq(TOKEN_KEY_ETH), eq(BigDecimal.TWO));
-
     }
-
 }

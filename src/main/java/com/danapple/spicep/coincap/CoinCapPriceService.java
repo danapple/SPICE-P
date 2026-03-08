@@ -19,14 +19,12 @@ import java.util.concurrent.Future;
 public class CoinCapPriceService  extends AbstractCoinCapService {
     private final Logger logger = LoggerFactory.getLogger(CoinCapPriceService.class);
 
-    @Value( "${spicep.coinCapPriceService.apiKey}" )
-    private String apiKey;
-    @Value( "${spicep.coinCapPriceService.url}" )
-    private String url;
-
     private final ExecutorService executorService;
 
-    CoinCapPriceService(@Qualifier("coinCapExecutorService") final ExecutorService executorService) {
+    CoinCapPriceService(@Qualifier("coinCapExecutorService") final ExecutorService executorService,
+                        @Value("${spicep.coinCapPriceService.apiKey}") String apiKey,
+                        @Value( "${spicep.coinCapPriceService.url}") String url) {
+        super(apiKey, url);
         this.executorService = executorService;
     }
 
@@ -42,8 +40,7 @@ public class CoinCapPriceService  extends AbstractCoinCapService {
             RestTemplate restTemplate = new RestTemplate();
             HttpEntity<String> entity = new HttpEntity<>("parameters",
                                                          getHeaders());
-
-            String thisUrl = "%s/price/bysymbol/%s".formatted(url,
+            String thisUrl = "%s/price/bysymbol/%s".formatted(getUrl(),
                                                   symbol);
             ResponseEntity<PriceResponse> result =
                     restTemplate.exchange(thisUrl,
@@ -53,7 +50,7 @@ public class CoinCapPriceService  extends AbstractCoinCapService {
             logger.trace("Result = {}",
                         result);
             PriceResponse body = result.getBody();
-            BigDecimal price = body.data.getFirst();
+            BigDecimal price = body.getData().getFirst();
             logger.debug("Got price {} for symbol {}",
                         price,
                         symbol);
@@ -67,31 +64,10 @@ public class CoinCapPriceService  extends AbstractCoinCapService {
     }
 
     private static class PriceResponse {
-        private long timestamp;
         private List<BigDecimal> data;
-
-        public long getTimestamp() {
-            return timestamp;
-        }
-
-        public void setTimestamp(long timestamp) {
-            this.timestamp = timestamp;
-        }
 
         public List<BigDecimal> getData() {
             return data;
-        }
-
-        public void setData(List<BigDecimal> data) {
-            this.data = data;
-        }
-
-        @Override
-        public String toString() {
-            return "PriceResponse{" +
-                    "timestamp=" + timestamp +
-                    ", data=" + data +
-                    '}';
         }
     }
 }

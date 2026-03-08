@@ -22,14 +22,12 @@ import java.util.concurrent.Future;
 public class CoinCapHistoricalPriceService extends AbstractCoinCapService {
     private final Logger logger = LoggerFactory.getLogger(CoinCapHistoricalPriceService.class);
 
-    @Value( "${spicep.coinCapPriceService.apiKey}" )
-    private String apiKey;
-    @Value( "${spicep.coinCapPriceService.url}" )
-    private String url;
-
     private final ExecutorService executorService;
 
-    CoinCapHistoricalPriceService(@Qualifier("coinCapExecutorService") final ExecutorService executorService) {
+    CoinCapHistoricalPriceService(@Qualifier("coinCapExecutorService") final ExecutorService executorService,
+                                  @Value("${spicep.coinCapPriceService.apiKey}") String apiKey,
+                                  @Value( "${spicep.coinCapPriceService.url}") String url) {
+        super(apiKey, url);
         this.executorService = executorService;
     }
 
@@ -67,7 +65,7 @@ public class CoinCapHistoricalPriceService extends AbstractCoinCapService {
     }
 
     private String searchForSlug(RestTemplate restTemplate, HttpEntity<String> entity, String symbol) {
-        String thisUrl = "%s/assets?search=%s".formatted(url,
+        String thisUrl = "%s/assets?search=%s".formatted(getUrl(),
                 symbol);
         ResponseEntity<SearchResponse> result =
                 restTemplate.exchange(thisUrl,
@@ -77,21 +75,21 @@ public class CoinCapHistoricalPriceService extends AbstractCoinCapService {
         logger.trace("Result = {}",
                 result);
         SearchResponse body = result.getBody();
-        if (body.data.isEmpty()) {
+        if (body.getData().isEmpty()) {
             logger.debug("No slugs returned  for symbol {}", symbol);
             return null;
         }
-        SearchData searchData = body.data.getFirst();
+        SearchData searchData = body.getData().getFirst();
         logger.debug("Got slug {} for symbol {}",
-                searchData.id,
+                searchData.getId(),
                 symbol);
-        return searchData.id;
+        return searchData.getId();
     }
 
     private BigDecimal getPrice(RestTemplate restTemplate, HttpEntity<String> entity, String slug, LocalDate date) {
         long startOfDay = date.atStartOfDay().toEpochSecond(ZoneOffset.UTC) * 1000;
         long endOfDay = date.plus(1, ChronoUnit.DAYS).atStartOfDay().toEpochSecond(ZoneOffset.UTC) * 1000;
-        String thisUrl = "%s/assets/%s/history?interval=d1&start=%d&end=%d".formatted(url,
+        String thisUrl = "%s/assets/%s/history?interval=d1&start=%d&end=%d".formatted(getUrl(),
                 slug,
                 startOfDay,
                 endOfDay);
@@ -105,9 +103,9 @@ public class CoinCapHistoricalPriceService extends AbstractCoinCapService {
 
         PriceResponse body = result.getBody();
         logger.debug("Got {} prices for slug {} on {}",
-                body.data.size(), slug, date);
-        BigDecimal price = body.data.getLast().priceUsd;
-        String dateTime = body.data.getLast().date;
+                body.getData().size(), slug, date);
+        BigDecimal price = body.getData().getLast().getPriceUsd();
+        String dateTime = body.getData().getLast().getDate();
 
         logger.debug("Got price {} for slug {} on {} ({})",
                 slug,
@@ -119,43 +117,17 @@ public class CoinCapHistoricalPriceService extends AbstractCoinCapService {
 
     private static class SearchData {
         private String id;
-        private String symbol;
 
         public String getId() {
             return id;
         }
-
-        public void setId(String id) {
-            this.id = id;
-        }
-
-        public String getSymbol() {
-            return symbol;
-        }
-
-        public void setSymbol(String symbol) {
-            this.symbol = symbol;
-        }
     }
     
     private static class SearchResponse {
-        private long timestamp;
         private List<SearchData> data;
-
-        public long getTimestamp() {
-            return timestamp;
-        }
-
-        public void setTimestamp(long timestamp) {
-            this.timestamp = timestamp;
-        }
 
         public List<SearchData> getData() {
             return data;
-        }
-
-        public void setData(List<SearchData> data) {
-            this.data = data;
         }
     }
 
@@ -167,45 +139,21 @@ public class CoinCapHistoricalPriceService extends AbstractCoinCapService {
             return priceUsd;
         }
 
-        public void setPriceUsd(BigDecimal priceUsd) {
-            this.priceUsd = priceUsd;
-        }
-
         public String getDate() {
             return date;
         }
-
-        public void setDate(String date) {
-            this.date = date;
-        }
-
-
     }
 
     private static class PriceResponse {
-        private long timestamp;
         private List<PriceData> data;
-
-        public long getTimestamp() {
-            return timestamp;
-        }
-
-        public void setTimestamp(long timestamp) {
-            this.timestamp = timestamp;
-        }
 
         public List<PriceData> getData() {
             return data;
         }
 
-        public void setData(List<PriceData> data) {
-            this.data = data;
-        }
-
         @Override
         public String toString() {
             return "PriceResponse{" +
-                    "timestamp=" + timestamp +
                     ", data=" + data +
                     '}';
         }
