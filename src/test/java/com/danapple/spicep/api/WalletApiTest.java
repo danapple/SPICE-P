@@ -7,6 +7,7 @@ import com.danapple.spicep.dtos.AddAssetRequest;
 import com.danapple.spicep.dtos.CreateWalletRequest;
 import com.danapple.spicep.dtos.CreateWalletResponse;
 import com.danapple.spicep.entities.Position;
+import com.danapple.spicep.entities.Wallet;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -20,12 +21,15 @@ import java.math.BigDecimal;
 import static com.danapple.spicep.common.TestConstants.SYMBOL_BTC;
 import static com.danapple.spicep.common.TestConstants.TOKEN_KEY_BTC;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
+import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 public class WalletApiTest {
 
-    public static final String POSITION_KEY = "a";
-    public static final String WALLET_KEY = "b";
+    private static final String POSITION_KEY = "a";
+    private static final String WALLET_KEY = "b";
+    private static final String EMAIL_ADDRESS = "foo@foo.com";
+
     @Mock(lenient = true)
     private WalletDao walletDao;
     @Mock(lenient = true)
@@ -37,6 +41,9 @@ public class WalletApiTest {
 
     @BeforeEach
     public void beforeEach() {
+        when(walletDao.getWallet(WALLET_KEY)).thenReturn(new Wallet(WALLET_KEY, EMAIL_ADDRESS));
+        when(walletDao.getWallet(null)).thenReturn(null);
+
         walletApi = new WalletApi(walletDao,
                 tokenDao,
                 coinCapPriceService);
@@ -83,14 +90,14 @@ public class WalletApiTest {
     @Test
     void acceptsProperEmailAddress() {
         CreateWalletRequest request = new CreateWalletRequest();
-        request.setEmailAddress("foo@foo.com");
+        request.setEmailAddress(EMAIL_ADDRESS);
 
         ResponseEntity<?> response = walletApi.createWallet(request);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.CREATED);
         assertThat(response.getBody()).isInstanceOf(CreateWalletResponse.class);
         CreateWalletResponse responseBody = (CreateWalletResponse) response.getBody();
-        assertThat(responseBody.emailAddress()).isEqualTo("foo@foo.com");
+        assertThat(responseBody.emailAddress()).isEqualTo(EMAIL_ADDRESS);
         assertThat(responseBody.id()).isNotBlank();
     }
 
@@ -112,12 +119,11 @@ public class WalletApiTest {
 
     @Test
     void rejectsMissingQuantity() {
-        String walletKey = "A";
         AddAssetRequest addAssetRequest = new AddAssetRequest();
         addAssetRequest.setPrice(BigDecimal.ONE);
         addAssetRequest.setSymbol(SYMBOL_BTC);
 
-        ResponseEntity<?> response = walletApi.adjustPosition(walletKey, addAssetRequest);
+        ResponseEntity<?> response = walletApi.adjustPosition(WALLET_KEY, addAssetRequest);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.PRECONDITION_FAILED);
         assertThat(response.getBody()).isInstanceOf(String.class);
@@ -127,13 +133,12 @@ public class WalletApiTest {
 
     @Test
     void rejectsQuantityZero() {
-        String walletKey = "A";
         AddAssetRequest addAssetRequest = new AddAssetRequest();
         addAssetRequest.setPrice(BigDecimal.ONE);
         addAssetRequest.setQuantity(BigDecimal.ZERO);
         addAssetRequest.setSymbol(SYMBOL_BTC);
 
-        ResponseEntity<?> response = walletApi.adjustPosition(walletKey, addAssetRequest);
+        ResponseEntity<?> response = walletApi.adjustPosition(WALLET_KEY, addAssetRequest);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.PRECONDITION_FAILED);
         assertThat(response.getBody()).isInstanceOf(String.class);
@@ -143,12 +148,11 @@ public class WalletApiTest {
 
     @Test
     void rejectsMissingPrice() {
-        String walletKey = "A";
         AddAssetRequest addAssetRequest = new AddAssetRequest();
         addAssetRequest.setQuantity(BigDecimal.ZERO);
         addAssetRequest.setSymbol(SYMBOL_BTC);
 
-        ResponseEntity<?> response = walletApi.adjustPosition(walletKey, addAssetRequest);
+        ResponseEntity<?> response = walletApi.adjustPosition(WALLET_KEY, addAssetRequest);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.PRECONDITION_FAILED);
         assertThat(response.getBody()).isInstanceOf(String.class);
@@ -158,12 +162,11 @@ public class WalletApiTest {
 
     @Test
     void rejectsMissingSymbol() {
-        String walletKey = "A";
         AddAssetRequest addAssetRequest = new AddAssetRequest();
         addAssetRequest.setPrice(BigDecimal.ONE);
         addAssetRequest.setQuantity(BigDecimal.ZERO);
 
-        ResponseEntity<?> response = walletApi.adjustPosition(walletKey, addAssetRequest);
+        ResponseEntity<?> response = walletApi.adjustPosition(WALLET_KEY, addAssetRequest);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.PRECONDITION_FAILED);
         assertThat(response.getBody()).isInstanceOf(String.class);
@@ -173,13 +176,12 @@ public class WalletApiTest {
 
     @Test
     void rejectsShortSymbol() {
-        String walletKey = "A";
         AddAssetRequest addAssetRequest = new AddAssetRequest();
         addAssetRequest.setPrice(BigDecimal.ONE);
         addAssetRequest.setQuantity(BigDecimal.ZERO);
         addAssetRequest.setSymbol("");
 
-        ResponseEntity<?> response = walletApi.adjustPosition(walletKey, addAssetRequest);
+        ResponseEntity<?> response = walletApi.adjustPosition(WALLET_KEY, addAssetRequest);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.PRECONDITION_FAILED);
         assertThat(response.getBody()).isInstanceOf(String.class);
@@ -189,13 +191,12 @@ public class WalletApiTest {
 
     @Test
     void rejectsBlankSymbol() {
-        String walletKey = "A";
         AddAssetRequest addAssetRequest = new AddAssetRequest();
         addAssetRequest.setPrice(BigDecimal.ONE);
         addAssetRequest.setQuantity(BigDecimal.ZERO);
         addAssetRequest.setSymbol("   ");
 
-        ResponseEntity<?> response = walletApi.adjustPosition(walletKey, addAssetRequest);
+        ResponseEntity<?> response = walletApi.adjustPosition(WALLET_KEY, addAssetRequest);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.PRECONDITION_FAILED);
         assertThat(response.getBody()).isInstanceOf(String.class);
@@ -205,13 +206,12 @@ public class WalletApiTest {
 
     @Test
     void rejectsLongSymbol() {
-        String walletKey = "A";
         AddAssetRequest addAssetRequest = new AddAssetRequest();
         addAssetRequest.setPrice(BigDecimal.ONE);
         addAssetRequest.setQuantity(BigDecimal.ZERO);
         addAssetRequest.setSymbol("a".repeat(500));
 
-        ResponseEntity<?> response = walletApi.adjustPosition(walletKey, addAssetRequest);
+        ResponseEntity<?> response = walletApi.adjustPosition(WALLET_KEY, addAssetRequest);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.PRECONDITION_FAILED);
         assertThat(response.getBody()).isInstanceOf(String.class);

@@ -17,6 +17,12 @@ import java.util.Map;
 @Service
 public class WalletDao {
     private final JdbcClient jdbcClient;
+    private final static String BASIC_POSITON_QUERY = """
+            SELECT
+            positionKey, walletKey, tokenKey, quantity, cost, closedGain, versionNumber
+            FROM position""";
+
+
     private final Logger logger = LoggerFactory.getLogger(WalletDao.class);
 
     WalletDao(@Qualifier("spicepJdbcClient") final JdbcClient jdbcClient) {
@@ -40,7 +46,7 @@ public class WalletDao {
     public Wallet getWallet(final String walletKey) {
         JdbcClient.StatementSpec queryStatement = jdbcClient.sql("""
             SELECT
-            walletKey, emailAddress
+            emailAddress
             FROM wallet
             WHERE walletKey = :walletKey
             """)
@@ -57,7 +63,10 @@ public class WalletDao {
 
     public Wallet getWalletByEmailAddress(final String emailAddress) {
         JdbcClient.StatementSpec queryStatement = jdbcClient.sql("""
-            SELECT walletKey FROM wallet WHERE emailAddress = :emailAddress
+            SELECT
+            walletKey
+            FROM wallet
+            WHERE emailAddress = :emailAddress
             """)
                 .param("emailAddress", emailAddress);
         JdbcClient.ResultQuerySpec query = queryStatement.query();
@@ -73,11 +82,9 @@ public class WalletDao {
 
     public List<Position> getPositions(final String walletKey) {
         JdbcClient.StatementSpec queryStatement = jdbcClient.sql("""
-            SELECT
-            positionKey, walletKey, tokenKey, quantity, cost, closedGain, versionNumber
-            FROM position
+            %s
             WHERE walletKey = :walletKey
-            """)
+            """.formatted(BASIC_POSITON_QUERY))
                 .param("walletKey", walletKey);
         JdbcClient.ResultQuerySpec query = queryStatement.query();
         List<Map<String, Object>> rows = query.listOfRows();
@@ -95,11 +102,9 @@ public class WalletDao {
     public Position getPosition(final String walletKey,
                                 final String tokenKey) {
         JdbcClient.StatementSpec queryStatement = jdbcClient.sql("""
-            SELECT
-            positionKey, walletKey, tokenKey, quantity, cost, closedGain, versionNumber
-            FROM position
+            %s
             WHERE walletKey = :walletKey AND tokenKey = :tokenKey
-            """)
+            """.formatted(BASIC_POSITON_QUERY))
                 .param("walletKey", walletKey)
                 .param("tokenKey", tokenKey);
         JdbcClient.ResultQuerySpec query = queryStatement.query();

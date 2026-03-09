@@ -16,6 +16,12 @@ import java.util.Map;
 @Service
 public class TokenDao {
     private final JdbcClient jdbcClient;
+    private final static String BASIC_TOKEN_QUERY = """
+            SELECT
+            tokenKey, symbol
+            FROM token
+            """;
+
     private final Logger logger = LoggerFactory.getLogger(TokenDao.class);
 
     TokenDao(@Qualifier("spicepJdbcClient") final JdbcClient jdbcClient) {
@@ -36,11 +42,7 @@ public class TokenDao {
     }
 
     public Map<String, Token> getAllTokens() {
-        JdbcClient.StatementSpec queryStatement = jdbcClient.sql("""
-            SELECT
-            tokenKey, symbol
-            FROM token
-            """);
+        JdbcClient.StatementSpec queryStatement = jdbcClient.sql(BASIC_TOKEN_QUERY);
         JdbcClient.ResultQuerySpec query = queryStatement.query();
         List<Map<String, Object>> rows = query.listOfRows();
         Map<String, Token> tokens = new HashMap<>();
@@ -58,11 +60,9 @@ public class TokenDao {
 
     public Map<String, Token> getTokens(final Collection<String> tokenKeys) {
         JdbcClient.StatementSpec queryStatement = jdbcClient.sql("""
-            SELECT
-            tokenKey, symbol
-            FROM token
+            %s
             WHERE tokenKey IN (:tokenKeys)
-            """)
+            """.formatted(BASIC_TOKEN_QUERY))
                 .param("tokenKeys", tokenKeys);
         JdbcClient.ResultQuerySpec query = queryStatement.query();
         List<Map<String, Object>> rows = query.listOfRows();
@@ -82,11 +82,9 @@ public class TokenDao {
 
     public Map<String, Token> getTokensBySymbol(final Collection<String> symbols) {
         JdbcClient.StatementSpec queryStatement = jdbcClient.sql("""
-            SELECT
-            tokenKey, symbol
-            FROM token
+            %s
             WHERE symbol IN (:symbols)
-            """)
+            """.formatted(BASIC_TOKEN_QUERY))
                 .param("symbols", symbols);
         JdbcClient.ResultQuerySpec query = queryStatement.query();
         List<Map<String, Object>> rows = query.listOfRows();

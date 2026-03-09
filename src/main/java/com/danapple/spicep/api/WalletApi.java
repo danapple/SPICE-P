@@ -41,34 +41,28 @@ class WalletApi extends AbstractApi {
     @PostMapping
     ResponseEntity<?> createWallet(@RequestBody CreateWalletRequest request) {
         logger.debug("createWallet {}", request);
-        String emailAddress = request.getEmailAddress();
-        if (emailAddress == null ) {
-            return createErrorResponse("Email address must be supplied",
-                    HttpStatus.PRECONDITION_FAILED);
-        }
-        emailAddress = emailAddress.trim();
-        if (emailAddress.isEmpty() ||
-                emailAddress.length() > 200) {
-            return createErrorResponse("Email address must be between 1 and 200 characters",
-                    HttpStatus.PRECONDITION_FAILED);
-        }
-        Wallet wallet = new Wallet(UUID.randomUUID().toString(), emailAddress);
-        logger.debug("Trying to save wallet {}", wallet);
-        HttpStatus status;
         try {
-            walletDao.saveWallet(wallet);
-            status = HttpStatus.CREATED;
-        }
-        catch (Exception e) {
-            logger.debug("Failed to save wallet, trying load existing wallet", e);
-            wallet = walletDao.getWalletByEmailAddress(emailAddress);
-            logger.debug("Wallet already {} already exists", wallet);
-            status = HttpStatus.OK;
-        }
+            String emailAddress = validateEmailAddress(request);
+            Wallet wallet = new Wallet(UUID.randomUUID().toString(), emailAddress);
+            logger.debug("Trying to save wallet {}", wallet);
+            HttpStatus status;
+            try {
+                walletDao.saveWallet(wallet);
+                status = HttpStatus.CREATED;
+            } catch (Exception e) {
+                logger.debug("Failed to save wallet, trying load existing wallet", e);
+                wallet = walletDao.getWalletByEmailAddress(emailAddress);
+                logger.debug("Wallet already {} already exists", wallet);
+                status = HttpStatus.OK;
+            }
 
-        return new ResponseEntity<>(new CreateWalletResponse(wallet.walletKey(),
-                                                             wallet.emailAddress()),
-                                    status);
+            return new ResponseEntity<>(new CreateWalletResponse(wallet.walletKey(),
+                    wallet.emailAddress()),
+                    status);
+        }
+        catch (ValidationException e) {
+            return createErrorResponse(e.getMessage(), HttpStatus.PRECONDITION_FAILED);
+        }
     }
 
     @GetMapping("/{walletKey}")
@@ -82,106 +76,73 @@ class WalletApi extends AbstractApi {
         List<Position> positions = walletDao.getPositions(walletKey);
         Collection<String> tokenKeys = positions.stream().map(Position::tokenKey).collect(Collectors.toSet());
         Map<String, BigDecimal> prices = tokenDao.getPrices(tokenKeys);
-
         Map<String, Token> tokens = tokenDao.getTokens(tokenKeys);
 
-        BigDecimal total = BigDecimal.ZERO;
         List<AssetPosition> assetPositions = new ArrayList<>();
         for (Position position : positions) {
-            BigDecimal price = prices.get(position.tokenKey());
-            BigDecimal value = null;
-            BigDecimal gain = null;
-            if (price != null) {
-                value = price.multiply(position.quantity());
-                gain = value.subtract(position.cost());
-            }
-            Token token = tokens.get(position.tokenKey());
-            BigDecimal costBasis = position.quantity().compareTo(BigDecimal.ZERO) == 0 ?
-                    BigDecimal.ZERO :
-                    position.cost().divide(position.quantity(),
-                                           RoundingMode.HALF_UP);
-            AssetPosition assetPosition = new AssetPosition(token.symbol(),
-                                                            position.quantity(),
-                                                            costBasis,
-                                                            position.cost(),
-                                                            price,
-                                                            value,
-                                                            gain,
-                                                            position.closedGain());
+            AssetPosition assetPosition = convertPositionToAssetPosition(position, prices, tokens);
             assetPositions.add(assetPosition);
-            if (value != null) {
-                total = total.add(value);
-            }
+            
         }
+        BigDecimal total = assetPositions
+                .stream()
+                .map(AssetPosition::value)
+                .filter(Objects::nonNull)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
 
         GetWalletResponse response = new GetWalletResponse(walletKey,
                                                            total,
                                                            assetPositions);
-        HttpStatus status = HttpStatus.OK;
-
         return new ResponseEntity<>(response,
-                                    status);
+                HttpStatus.OK);
     }
 
     @PostMapping("/{walletKey}/assets")
     ResponseEntity<?> adjustPosition(@PathVariable("walletKey") String walletKey,
                                                     @RequestBody AddAssetRequest request) {
         logger.debug("addAsset for walletKey {}: {}", walletKey, request);
-        String symbol = request.getSymbol();
-        if (symbol == null) {
-            return createErrorResponse("Symbol must be supplied", HttpStatus.PRECONDITION_FAILED);
-        }
-        symbol = symbol.trim().toUpperCase();
-        if (symbol.isEmpty() ||
-                symbol.length() > 200) {
-            return createErrorResponse("Symbol must be between 1 and 200 characters",
-                    HttpStatus.PRECONDITION_FAILED);
-        }
-        if (request.getQuantity() == null) {
-            return createErrorResponse("Quantity must be supplied", HttpStatus.PRECONDITION_FAILED);
-        }
-        if (request.getPrice() == null) {
-            return createErrorResponse("Price must be supplied", HttpStatus.PRECONDITION_FAILED);
-        }
-        if (request.getQuantity().compareTo(BigDecimal.ZERO) == 0) {
-            return createErrorResponse("Quantity of 0 is not allowed", HttpStatus.PRECONDITION_FAILED);
-        }
 
-        Wallet wallet = walletDao.getWallet(walletKey);
-        if (wallet == null) {
-            logger.debug("Wallet {} does not exist", walletKey);
-            return createErrorResponse("Wallet not found", HttpStatus.NOT_FOUND);
-        }
+        try {
+            Wallet wallet = walletDao.getWallet(walletKey);
+            if (wallet == null) {
+                logger.debug("Wallet {} does not exist", walletKey);
+                return createErrorResponse("Wallet not found", HttpStatus.NOT_FOUND);
+            }
+            String symbol = validateAssetRequest(request);
+            String tokenKey = setupToken(symbol);
+            if (tokenKey == null) {
+                return createErrorResponse("Token %s was not found".formatted(symbol),
+                        HttpStatus.NOT_FOUND);
+            }
 
-        String tokenKey = setupToken(symbol);
-        if (tokenKey == null) {
-            return createErrorResponse("Token %s was not found".formatted(symbol),
-                    HttpStatus.NOT_FOUND);
+            adjustPosition(walletKey, tokenKey, request);
+            return new ResponseEntity<>(HttpStatus.OK);
         }
+        catch (ValidationException e) {
+            return createErrorResponse(e.getMessage(), HttpStatus.PRECONDITION_FAILED);
+        }
+    }
 
+    private void adjustPosition(String walletKey, String tokenKey, AddAssetRequest request) {
         Position existingPosition = walletDao.getPosition(walletKey,
-                                                          tokenKey);
+                tokenKey);
         if (existingPosition == null) {
             String positionKey = UUID.randomUUID().toString();
-
             Position newPosition = new Position(positionKey,
-                                                walletKey,
-                                                tokenKey,
-                                                request.getQuantity(),
-                                                request.getQuantity().multiply(request.getPrice()),
-                                                BigDecimal.ZERO,
-                                                0);
+                    walletKey,
+                    tokenKey,
+                    request.getQuantity(),
+                    request.getQuantity().multiply(request.getPrice()),
+                    BigDecimal.ZERO,
+                    0);
             walletDao.savePosition(newPosition);
-
         }
         else {
             Position newPosition = adjustPosition(existingPosition,
-                                                  request.getQuantity(),
-                                                  request.getPrice());
+                    request.getQuantity(),
+                    request.getPrice());
             walletDao.updatePosition(newPosition);
         }
-        HttpStatus status = HttpStatus.OK;
-        return new ResponseEntity<>(status);
     }
 
     Position adjustPosition(Position position, BigDecimal quantity, BigDecimal price) {
@@ -234,19 +195,10 @@ class WalletApi extends AbstractApi {
     String setupToken(final String symbol) {
         logger.debug("Setting up token for symbol {}", symbol);
 
-        Map<String, Token> tokens = tokenDao.getTokensBySymbol(Set.of(symbol));
-        Token token = tokens.get(symbol);
-        if (token == null) {
-            token = new Token(UUID.randomUUID().toString(), symbol);
-            logger.debug("Token does not exist, saving new token {}", token);
-        }
-        String tokenKey = token.tokenKey();
-
-        Map<String, BigDecimal> prices = tokenDao.getPrices(Set.of(tokenKey));
-        BigDecimal price = prices.get(tokenKey);
+        Token token = getOrCreateToken(symbol);
+        BigDecimal price = getPriceFromDatabase(token);
         if (price != null) {
-            logger.debug("Got price {} in database for token {}", price, token);
-            return tokenKey;
+            return token.tokenKey();
         }
         logger.debug("No price in database for token {}, checking CoinCap", token);
         try {
@@ -258,11 +210,94 @@ class WalletApi extends AbstractApi {
             }
             logger.debug("Got price {} from CoinCap for token {}", price, token);
             tokenDao.saveToken(token);
-            tokenDao.savePrice(tokenKey, price);
-            return tokenKey;
+            tokenDao.savePrice(token.tokenKey(), price);
+            return token.tokenKey();
         }
         catch (InterruptedException | ExecutionException e) {
             return null;
         }
+    }
+
+    private Token getOrCreateToken(final String symbol) {
+        Map<String, Token> tokens = tokenDao.getTokensBySymbol(Set.of(symbol));
+        Token token = tokens.get(symbol);
+        if (token == null) {
+            token = new Token(UUID.randomUUID().toString(), symbol);
+            logger.debug("Token does not exist, creating new token {}", token);
+        }
+        return token;
+    }
+
+    private BigDecimal getPriceFromDatabase(Token token) {
+        String tokenKey = token.tokenKey();
+
+        Map<String, BigDecimal> prices = tokenDao.getPrices(Set.of(tokenKey));
+        BigDecimal price = prices.get(tokenKey);
+        if (price != null) {
+            logger.debug("Got price {} in database for token {}", price, token);
+            return price;
+        }
+        return null;
+    }
+
+    private static AssetPosition convertPositionToAssetPosition(Position position,
+                                                                Map<String, BigDecimal> prices,
+                                                                Map<String, Token> tokens) {
+        BigDecimal price = prices.get(position.tokenKey());
+        BigDecimal value = null;
+        BigDecimal gain = null;
+        if (price != null) {
+            value = price.multiply(position.quantity());
+            gain = value.subtract(position.cost());
+        }
+        Token token = tokens.get(position.tokenKey());
+        BigDecimal costBasis = position.quantity().compareTo(BigDecimal.ZERO) == 0 ?
+                BigDecimal.ZERO :
+                position.cost().divide(position.quantity(),
+                        RoundingMode.HALF_UP);
+        return new AssetPosition(token.symbol(),
+                position.quantity(),
+                costBasis,
+                position.cost(),
+                price,
+                value,
+                gain,
+                position.closedGain());
+    }
+
+    private static String validateEmailAddress(CreateWalletRequest request) throws ValidationException {
+        String emailAddress = request.getEmailAddress();
+
+        if (emailAddress == null) {
+            throw new ValidationException("Email address must be supplied");
+        }
+        emailAddress = emailAddress.trim();
+        if (emailAddress.isEmpty() ||
+                emailAddress.length() > 200) {
+            throw new ValidationException("Email address must be between 1 and 200 characters");
+        }
+        return emailAddress;
+    }
+
+    private static String validateAssetRequest(AddAssetRequest addAssetRequest) throws ValidationException {
+        String symbol = addAssetRequest.getSymbol();
+        if (symbol == null) {
+            throw new ValidationException("Symbol must be supplied");
+        }
+        symbol = symbol.trim().toUpperCase();
+        if (symbol.isEmpty() ||
+                symbol.length() > 200) {
+            throw new ValidationException("Symbol must be between 1 and 200 characters");
+        }
+        if (addAssetRequest.getPrice() == null) {
+            throw new ValidationException("Price must be supplied");
+        }
+        if (addAssetRequest.getQuantity() == null) {
+            throw new ValidationException("Quantity must be supplied");
+        }
+        if (addAssetRequest.getQuantity().compareTo(BigDecimal.ZERO) == 0) {
+            throw new ValidationException("Quantity of 0 is not allowed");
+        }
+        return symbol;
     }
 }

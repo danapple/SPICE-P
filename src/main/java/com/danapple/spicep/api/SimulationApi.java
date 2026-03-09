@@ -20,6 +20,7 @@ import java.time.LocalDate;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 
 @RestController
@@ -42,100 +43,105 @@ class SimulationApi extends AbstractApi {
             LocalDate date = request.getDate();
             LocalDate nowDate = LocalDate.now();
             List<SimulateAssetRequest> simulateAssetRequests = request.getAssets();
-            Map<String, Future<BigDecimal>> futures = new HashMap<>();
-            for (SimulateAssetRequest requestAsset : simulateAssetRequests) {
-                String symbol = requestAsset.getSymbol();
-                if (symbol == null) {
-                    return createErrorResponse("Symbol must be supplied", HttpStatus.PRECONDITION_FAILED);
-                }
-                symbol = symbol.trim().toUpperCase();
-                if (symbol.isEmpty() ||
-                        symbol.length() > 200) {
-                    return createErrorResponse("Symbol must be between 1 and 200 characters",
-                            HttpStatus.PRECONDITION_FAILED);
-                }
-                if (requestAsset.getQuantity() == null) {
-                    return createErrorResponse("Quantity must be supplied", HttpStatus.PRECONDITION_FAILED);
-                }
-                if (requestAsset.getValue() == null) {
-                    return createErrorResponse("Value must be supplied", HttpStatus.PRECONDITION_FAILED);
-                }
-                if (requestAsset.getQuantity().compareTo(BigDecimal.ZERO) == 0) {
-                    return createErrorResponse("Quantity of 0 is not allowed", HttpStatus.PRECONDITION_FAILED);
-                }
-                if (requestAsset.getValue().compareTo(BigDecimal.ZERO) == 0) {
-                    return createErrorResponse("Value of 0 is not allowed", HttpStatus.PRECONDITION_FAILED);
-                }
-                if (date == null || date.equals(nowDate)) {
-                    futures.put(symbol, coinCapPriceService.getPrice(symbol));
-                }
-                else {
-                    futures.put(symbol, coinCapHistoricalPriceService.getHistoricalPrice(symbol, request.getDate()));
-                }
-            }
-            BigDecimal totalValue = BigDecimal.ZERO;
-            String bestSymbol = null;
-            BigDecimal bestGain = BigDecimal.ZERO;
-            BigDecimal bestPerformance = BigDecimal.ZERO;
-
-            String worstSymbol = null;
-            BigDecimal worstGain = BigDecimal.ZERO;
-            BigDecimal worstPerformance = BigDecimal.ZERO;
-
-            for (SimulateAssetRequest requestAsset : simulateAssetRequests) {
-                String symbol = requestAsset.getSymbol().trim().toUpperCase();
-                Future<BigDecimal> future = futures.get(symbol);
-                BigDecimal price = future.get();
-                if (price == null) {
-                    return createErrorResponse("No price found for token %s".formatted(symbol),
-                            HttpStatus.NOT_FOUND);
-                }
-                BigDecimal currentValue = requestAsset.getQuantity().multiply(price);
-                totalValue = totalValue.add(currentValue);
-                BigDecimal gain = currentValue.subtract(requestAsset.getValue());
-                BigDecimal currentPerformance = gain.multiply(ONE_HUNDRED)
-                        .divide(requestAsset.getValue(),
-                                2,
-                                RoundingMode.HALF_UP);
-
-                logger.debug("symbol {}, value {}, quantity {}, price {}, currentValue {}, gain {}, currentPerformance {}",
-                        symbol,
-                        requestAsset.getValue(),
-                        requestAsset.getQuantity(),
-                        price,
-                        currentValue,
-                        gain,
-                        currentPerformance);
-
-                if (bestSymbol == null || gain.compareTo(bestGain) > 0) {
-                    bestSymbol = symbol;
-                    bestGain = gain;
-                    bestPerformance = currentPerformance;
-                }
-                if (worstSymbol == null || gain.compareTo(worstGain) < 0) {
-                    worstSymbol = symbol;
-                    worstGain = gain;
-                    worstPerformance = currentPerformance;
-                }
-            }
-            LocalDate responseDate = date;
-            if (responseDate == null) {
-                responseDate = nowDate;
-            }
-            SimulateWalletResponse response = new SimulateWalletResponse(totalValue,
-                    bestSymbol,
-                    bestPerformance,
-                    worstSymbol,
-                    worstPerformance,
-                    responseDate);
-            HttpStatus status = HttpStatus.OK;
-
-            return new ResponseEntity<>(response,
-                    status);
+            Map<String, Future<BigDecimal>> futures = validateAndSetupPriceFutures(nowDate, date, simulateAssetRequests);
+            return generateWalletPerformance(simulateAssetRequests, futures, date, nowDate);
+        }
+        catch (ValidationException ve) {
+            return createErrorResponse(ve.getMessage(), HttpStatus.PRECONDITION_FAILED);
         }
         catch (Exception ex) {
             logger.warn("Could not simulate", ex);
             return createErrorResponse("Could not simulate", HttpStatus.INTERNAL_SERVER_ERROR);
         }
+    }
+
+    private ResponseEntity<?> generateWalletPerformance(List<SimulateAssetRequest> simulateAssetRequests,
+                                                Map<String, Future<BigDecimal>> futures,
+                                                LocalDate date,
+                                                LocalDate nowDate) throws InterruptedException, ExecutionException {
+        BigDecimal totalValue = BigDecimal.ZERO;
+        AssetPerformance bestAssetPerformance = null;
+        AssetPerformance worstAssetPerformance = null;
+
+        for (SimulateAssetRequest requestAsset : simulateAssetRequests) {
+            String symbol = requestAsset.getSymbol().trim().toUpperCase();
+            Future<BigDecimal> future = futures.get(symbol);
+            BigDecimal price = future.get();
+            if (price == null) {
+                return createErrorResponse("No price found for token %s".formatted(symbol),
+                        HttpStatus.NOT_FOUND);
+            }
+            BigDecimal currentValue = requestAsset.getQuantity().multiply(price);
+            totalValue = totalValue.add(currentValue);
+            BigDecimal gain = currentValue.subtract(requestAsset.getValue());
+            BigDecimal currentPerformance = gain.multiply(ONE_HUNDRED)
+                    .divide(requestAsset.getValue(),
+                            2,
+                            RoundingMode.HALF_UP);
+
+            if (bestAssetPerformance == null || currentPerformance.compareTo(bestAssetPerformance.gain()) > 0) {
+                bestAssetPerformance = new AssetPerformance(symbol, gain, currentPerformance);
+            }
+            if (worstAssetPerformance == null || currentPerformance.compareTo(worstAssetPerformance.gain()) < 0) {
+                worstAssetPerformance = new AssetPerformance(symbol, gain, currentPerformance);
+            }
+        }
+        LocalDate responseDate = date;
+        if (responseDate == null) {
+            responseDate = nowDate;
+        }
+        SimulateWalletResponse response = new SimulateWalletResponse(totalValue,
+                bestAssetPerformance != null ? bestAssetPerformance.symbol() : null,
+                bestAssetPerformance != null ? bestAssetPerformance.performance() : null,
+                worstAssetPerformance != null ? worstAssetPerformance.symbol() : null,
+                worstAssetPerformance != null ? worstAssetPerformance.performance() : null,
+                responseDate);
+
+        return new ResponseEntity<>(response,
+                HttpStatus.OK);
+    }
+
+    private record AssetPerformance(String symbol, BigDecimal gain, BigDecimal performance) {}
+
+    private Map<String, Future<BigDecimal>> validateAndSetupPriceFutures(LocalDate nowDate,
+                                                                         LocalDate requestDate,
+                                                                         List<SimulateAssetRequest> simulateAssetRequests)
+            throws ValidationException {
+        Map<String, Future<BigDecimal>> futures = new HashMap<>();
+        for (SimulateAssetRequest requestAsset : simulateAssetRequests) {
+            String symbol = validateSimulateAssetRequest(requestAsset);
+            if (requestDate == null || requestDate.equals(nowDate)) {
+                futures.put(symbol, coinCapPriceService.getPrice(symbol));
+            }
+            else {
+                futures.put(symbol, coinCapHistoricalPriceService.getHistoricalPrice(symbol, requestDate));
+            }
+        }
+        return futures;
+    }
+
+    private String validateSimulateAssetRequest(SimulateAssetRequest assetRequest) throws ValidationException {
+        String symbol = assetRequest.getSymbol();
+        if (symbol == null) {
+            throw new ValidationException("Symbol must be supplied");
+        }
+        symbol = symbol.trim().toUpperCase();
+        if (symbol.isEmpty() ||
+                symbol.length() > 200) {
+            throw new ValidationException("Symbol must be between 1 and 200 characters");
+        }
+        if (assetRequest.getQuantity() == null) {
+            throw new ValidationException("Quantity must be supplied");
+        }
+        if (assetRequest.getValue() == null) {
+            throw new ValidationException("Value must be supplied");
+        }
+        if (assetRequest.getQuantity().compareTo(BigDecimal.ZERO) == 0) {
+            throw new ValidationException("Quantity of 0 is not allowed");
+        }
+        if (assetRequest.getValue().compareTo(BigDecimal.ZERO) == 0) {
+            throw new ValidationException("Value of 0 is not allowed");
+        }
+        return symbol;
     }
 }
