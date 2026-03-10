@@ -103,12 +103,12 @@ class WalletApi extends AbstractApi {
         logger.debug("addAsset for walletKey {}: {}", walletKey, request);
 
         try {
+            String symbol = validateAssetRequest(request);
             Wallet wallet = walletDao.getWallet(walletKey);
             if (wallet == null) {
                 logger.debug("Wallet {} does not exist", walletKey);
                 return createErrorResponse("Wallet not found", HttpStatus.NOT_FOUND);
             }
-            String symbol = validateAssetRequest(request);
             String tokenKey = setupToken(symbol);
             if (tokenKey == null) {
                 return createErrorResponse("Token %s was not found".formatted(symbol),

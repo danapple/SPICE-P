@@ -7,7 +7,6 @@ import com.danapple.spicep.dtos.AddAssetRequest;
 import com.danapple.spicep.dtos.CreateWalletRequest;
 import com.danapple.spicep.dtos.CreateWalletResponse;
 import com.danapple.spicep.entities.Position;
-import com.danapple.spicep.entities.Wallet;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -21,7 +20,6 @@ import java.math.BigDecimal;
 import static com.danapple.spicep.common.TestConstants.SYMBOL_BTC;
 import static com.danapple.spicep.common.TestConstants.TOKEN_KEY_BTC;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
-import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 public class WalletApiTest {
@@ -41,9 +39,6 @@ public class WalletApiTest {
 
     @BeforeEach
     public void beforeEach() {
-        when(walletDao.getWallet(WALLET_KEY)).thenReturn(new Wallet(WALLET_KEY, EMAIL_ADDRESS));
-        when(walletDao.getWallet(null)).thenReturn(null);
-
         walletApi = new WalletApi(walletDao,
                 tokenDao,
                 coinCapPriceService);
